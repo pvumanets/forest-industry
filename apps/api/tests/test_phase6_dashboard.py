@@ -186,9 +186,80 @@ def test_phase6_series_site_points(client: TestClient) -> None:
         assert r.status_code == 200
         body = r.json()
         assert body["topic"] == "site"
-        ser = body["series"][0]
-        assert ser["key"] == "WEB-TRF-TOT"
+        keys = [s["key"] for s in body["series"]]
+        assert "WEB-TRF-TOT" in keys
+        assert "WEB-TRF-CH-organic" in keys
+        assert "WEB-TRF-CH-cpc_direct" in keys
+        assert "WEB-TRF-CH-direct" in keys
+        ser = next(s for s in body["series"] if s["key"] == "WEB-TRF-TOT")
         assert len(ser["points"]) == 8
+
+    _with_today(run)
+
+
+def test_phase6_series_company_der_totals(client: TestClient) -> None:
+    _login_owner(client)
+
+    def run() -> None:
+        r = client.get(
+            "/api/reports/company/series",
+            params={"from": "2026-01-05", "to": "2026-02-23"},
+        )
+        assert r.status_code == 200
+        body = r.json()
+        assert body["topic"] == "company"
+        keys = [s["key"] for s in body["series"]]
+        assert "DER-REV-TOT" in keys
+        assert "DER-ORD-TOT" in keys
+
+    _with_today(run)
+
+
+def test_phase6_series_company_filtered_outlet(client: TestClient) -> None:
+    _login_owner(client)
+
+    def run() -> None:
+        r = client.get(
+            "/api/reports/company/series",
+            params={"from": "2026-01-05", "to": "2026-02-23", "outlet_code": "NOVOGRAD"},
+        )
+        assert r.status_code == 200
+        keys = [s["key"] for s in r.json()["series"]]
+        assert "OFF-REV-NOVOGRAD" in keys
+        assert "OFF-ORD-NOVOGRAD" in keys
+        assert "DER-REV-TOT" not in keys
+
+    _with_today(run)
+
+
+def test_phase6_series_marketing(client: TestClient) -> None:
+    _login_owner(client)
+
+    def run() -> None:
+        r = client.get(
+            "/api/reports/marketing/series",
+            params={"from": "2026-01-05", "to": "2026-02-23"},
+        )
+        assert r.status_code == 200
+        keys = [s["key"] for s in r.json()["series"]]
+        assert "MKT-AD-CTX" in keys
+        assert "MKT-AD-MAP" in keys
+
+    _with_today(run)
+
+
+def test_phase6_series_returns_der_totals(client: TestClient) -> None:
+    _login_owner(client)
+
+    def run() -> None:
+        r = client.get(
+            "/api/reports/returns/series",
+            params={"from": "2026-01-05", "to": "2026-02-23"},
+        )
+        assert r.status_code == 200
+        keys = [s["key"] for s in r.json()["series"]]
+        assert "DER-RET-SUM-TOT" in keys
+        assert "DER-RET-N-TOT" in keys
 
     _with_today(run)
 

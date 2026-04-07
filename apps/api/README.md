@@ -129,7 +129,7 @@ GET /api/dashboard/summary?period=quarter&anchor=2026-02-10
 
 `period`: `week` \| `month` \| `quarter`. Для **week** `anchor` — **понедельник**; иначе **422**. Якорь **позже «сегодня»** в Екатеринбурге — **422**.
 
-**Ряды** (тег **`reports`**): `topic` = `site` \| `outlets` \| `maps-2gis` \| `maps-yandex` \| `ozon` \| `returns`. Опционально `outlet_code` (физическая точка).
+**Ряды** (тег **`reports`**): `topic` = `site` \| `outlets` \| `company` \| `marketing` \| `maps-2gis` \| `maps-yandex` \| `ozon` \| `returns`. Опционально `outlet_code` (физическая точка; для `company` — офлайн одной точки). `site` отдаёт итого посетителей и три канала (`WEB-TRF-CH-organic` и т.д.).
 
 ```http
 GET /api/reports/site/series?from=2026-01-05&to=2026-02-23
