@@ -1,0 +1,711 @@
+{
+  "source": "seed_code",
+  "note": "Совпадает с тем, что кладёт run_seed() при пустой БД. Ключи outlet_code / week_start_date вместо id.",
+  "outlets": [
+    {
+      "code": "NOVOGRAD",
+      "display_name": "Точка на Новоградском",
+      "is_virtual": false,
+      "sort_order": 1
+    },
+    {
+      "code": "SVERDLOV",
+      "display_name": "Точка на Свердловском",
+      "is_virtual": false,
+      "sort_order": 2
+    },
+    {
+      "code": "OZON",
+      "display_name": "Ozon",
+      "is_virtual": true,
+      "sort_order": 3
+    }
+  ],
+  "users": [
+    {
+      "login": "admin",
+      "display_name": "Администратор",
+      "role": "owner",
+      "is_active": true,
+      "password_hash": "[не выгружается — задаётся при сиде, см. seed/passwords.py]"
+    },
+    {
+      "login": "evgeniy",
+      "display_name": "Евгений",
+      "role": "owner",
+      "is_active": true,
+      "password_hash": "[не выгружается — задаётся при сиде, см. seed/passwords.py]"
+    },
+    {
+      "login": "pavel",
+      "display_name": "Павел",
+      "role": "owner",
+      "is_active": true,
+      "password_hash": "[не выгружается — задаётся при сиде, см. seed/passwords.py]"
+    },
+    {
+      "login": "marketing",
+      "display_name": "Николай",
+      "role": "marketer",
+      "is_active": true,
+      "password_hash": "[не выгружается — задаётся при сиде, см. seed/passwords.py]"
+    },
+    {
+      "login": "manager",
+      "display_name": "Управляющий точками",
+      "role": "site_manager",
+      "is_active": true,
+      "password_hash": "[не выгружается — задаётся при сиде, см. seed/passwords.py]"
+    }
+  ],
+  "user_outlets": [
+    {
+      "user_login": "manager",
+      "outlet_code": "NOVOGRAD"
+    },
+    {
+      "user_login": "manager",
+      "outlet_code": "SVERDLOV"
+    }
+  ],
+  "reporting_weeks": [
+    {
+      "week_start_date": "2026-01-05"
+    },
+    {
+      "week_start_date": "2026-01-12"
+    },
+    {
+      "week_start_date": "2026-01-19"
+    },
+    {
+      "week_start_date": "2026-01-26"
+    },
+    {
+      "week_start_date": "2026-02-02"
+    },
+    {
+      "week_start_date": "2026-02-09"
+    },
+    {
+      "week_start_date": "2026-02-16"
+    },
+    {
+      "week_start_date": "2026-02-23"
+    }
+  ],
+  "weekly_offline_metrics": [
+    {
+      "week_start_date": "2026-01-05",
+      "outlet_code": "NOVOGRAD",
+      "off_rev": "0",
+      "off_ord": 1,
+      "off_ret_n": 0,
+      "off_ret_sum": "0.00"
+    },
+    {
+      "week_start_date": "2026-01-05",
+      "outlet_code": "SVERDLOV",
+      "off_rev": "98000",
+      "off_ord": 23,
+      "off_ret_n": 3,
+      "off_ret_sum": "3920.00"
+    },
+    {
+      "week_start_date": "2026-01-12",
+      "outlet_code": "NOVOGRAD",
+      "off_rev": "128500",
+      "off_ord": 30,
+      "off_ret_n": 5,
+      "off_ret_sum": "5140.00"
+    },
+    {
+      "week_start_date": "2026-01-12",
+      "outlet_code": "SVERDLOV",
+      "off_rev": "100800",
+      "off_ord": 24,
+      "off_ret_n": 4,
+      "off_ret_sum": "4032.00"
+    },
+    {
+      "week_start_date": "2026-01-19",
+      "outlet_code": "NOVOGRAD",
+      "off_rev": "132000",
+      "off_ord": 31,
+      "off_ret_n": 5,
+      "off_ret_sum": "5280.00"
+    },
+    {
+      "week_start_date": "2026-01-19",
+      "outlet_code": "SVERDLOV",
+      "off_rev": "103600",
+      "off_ord": 24,
+      "off_ret_n": 4,
+      "off_ret_sum": "4144.00"
+    },
+    {
+      "week_start_date": "2026-01-26",
+      "outlet_code": "NOVOGRAD",
+      "off_rev": "135500",
+      "off_ord": 32,
+      "off_ret_n": 5,
+      "off_ret_sum": "5420.00"
+    },
+    {
+      "week_start_date": "2026-01-26",
+      "outlet_code": "SVERDLOV",
+      "off_rev": "106400",
+      "off_ord": 25,
+      "off_ret_n": 4,
+      "off_ret_sum": "4256.00"
+    },
+    {
+      "week_start_date": "2026-02-02",
+      "outlet_code": "NOVOGRAD",
+      "off_rev": "139000",
+      "off_ord": 33,
+      "off_ret_n": 5,
+      "off_ret_sum": "5560.00"
+    },
+    {
+      "week_start_date": "2026-02-02",
+      "outlet_code": "SVERDLOV",
+      "off_rev": "109200",
+      "off_ord": 26,
+      "off_ret_n": 4,
+      "off_ret_sum": "4368.00"
+    },
+    {
+      "week_start_date": "2026-02-09",
+      "outlet_code": "NOVOGRAD",
+      "off_rev": "142500",
+      "off_ord": 33,
+      "off_ret_n": 5,
+      "off_ret_sum": "5700.00"
+    },
+    {
+      "week_start_date": "2026-02-09",
+      "outlet_code": "SVERDLOV",
+      "off_rev": "112000",
+      "off_ord": 26,
+      "off_ret_n": 4,
+      "off_ret_sum": "4480.00"
+    },
+    {
+      "week_start_date": "2026-02-16",
+      "outlet_code": "NOVOGRAD",
+      "off_rev": "146000",
+      "off_ord": 34,
+      "off_ret_n": 5,
+      "off_ret_sum": "5840.00"
+    },
+    {
+      "week_start_date": "2026-02-16",
+      "outlet_code": "SVERDLOV",
+      "off_rev": "114800",
+      "off_ord": 27,
+      "off_ret_n": 4,
+      "off_ret_sum": "4592.00"
+    },
+    {
+      "week_start_date": "2026-02-23",
+      "outlet_code": "NOVOGRAD",
+      "off_rev": "149500",
+      "off_ord": 35,
+      "off_ret_n": 5,
+      "off_ret_sum": "5980.00"
+    },
+    {
+      "week_start_date": "2026-02-23",
+      "outlet_code": "SVERDLOV",
+      "off_rev": "117600",
+      "off_ord": 28,
+      "off_ret_n": 4,
+      "off_ret_sum": "4704.00"
+    }
+  ],
+  "weekly_marketing_site": [
+    {
+      "week_start_date": "2026-01-05",
+      "mkt_ad_ctx": "18000",
+      "mkt_ad_map": "12000",
+      "web_beh_bounce": "42.5",
+      "web_beh_time": "125"
+    },
+    {
+      "week_start_date": "2026-01-12",
+      "mkt_ad_ctx": "18800",
+      "mkt_ad_map": "12500",
+      "web_beh_bounce": "43.5",
+      "web_beh_time": "127"
+    },
+    {
+      "week_start_date": "2026-01-19",
+      "mkt_ad_ctx": "19600",
+      "mkt_ad_map": "13000",
+      "web_beh_bounce": "44.5",
+      "web_beh_time": "129"
+    },
+    {
+      "week_start_date": "2026-01-26",
+      "mkt_ad_ctx": "20400",
+      "mkt_ad_map": "13500",
+      "web_beh_bounce": "42.5",
+      "web_beh_time": "131"
+    },
+    {
+      "week_start_date": "2026-02-02",
+      "mkt_ad_ctx": "21200",
+      "mkt_ad_map": "14000",
+      "web_beh_bounce": "43.5",
+      "web_beh_time": "133"
+    },
+    {
+      "week_start_date": "2026-02-09",
+      "mkt_ad_ctx": "22000",
+      "mkt_ad_map": "14500",
+      "web_beh_bounce": "44.5",
+      "web_beh_time": "135"
+    },
+    {
+      "week_start_date": "2026-02-16",
+      "mkt_ad_ctx": "22800",
+      "mkt_ad_map": "15000",
+      "web_beh_bounce": "42.5",
+      "web_beh_time": "137"
+    },
+    {
+      "week_start_date": "2026-02-23",
+      "mkt_ad_ctx": "23600",
+      "mkt_ad_map": "15500",
+      "web_beh_bounce": "43.5",
+      "web_beh_time": "139"
+    }
+  ],
+  "weekly_web_channels": [
+    {
+      "week_start_date": "2026-01-05",
+      "channel_key": "organic",
+      "visitors": 1200
+    },
+    {
+      "week_start_date": "2026-01-05",
+      "channel_key": "cpc_direct",
+      "visitors": 800
+    },
+    {
+      "week_start_date": "2026-01-05",
+      "channel_key": "direct",
+      "visitors": 400
+    },
+    {
+      "week_start_date": "2026-01-12",
+      "channel_key": "organic",
+      "visitors": 1310
+    },
+    {
+      "week_start_date": "2026-01-12",
+      "channel_key": "cpc_direct",
+      "visitors": 875
+    },
+    {
+      "week_start_date": "2026-01-12",
+      "channel_key": "direct",
+      "visitors": 440
+    },
+    {
+      "week_start_date": "2026-01-19",
+      "channel_key": "organic",
+      "visitors": 1420
+    },
+    {
+      "week_start_date": "2026-01-19",
+      "channel_key": "cpc_direct",
+      "visitors": 950
+    },
+    {
+      "week_start_date": "2026-01-19",
+      "channel_key": "direct",
+      "visitors": 480
+    },
+    {
+      "week_start_date": "2026-01-26",
+      "channel_key": "organic",
+      "visitors": 1530
+    },
+    {
+      "week_start_date": "2026-01-26",
+      "channel_key": "cpc_direct",
+      "visitors": 1025
+    },
+    {
+      "week_start_date": "2026-01-26",
+      "channel_key": "direct",
+      "visitors": 520
+    },
+    {
+      "week_start_date": "2026-02-02",
+      "channel_key": "organic",
+      "visitors": 1640
+    },
+    {
+      "week_start_date": "2026-02-02",
+      "channel_key": "cpc_direct",
+      "visitors": 1100
+    },
+    {
+      "week_start_date": "2026-02-02",
+      "channel_key": "direct",
+      "visitors": 560
+    },
+    {
+      "week_start_date": "2026-02-09",
+      "channel_key": "organic",
+      "visitors": 1750
+    },
+    {
+      "week_start_date": "2026-02-09",
+      "channel_key": "cpc_direct",
+      "visitors": 1175
+    },
+    {
+      "week_start_date": "2026-02-09",
+      "channel_key": "direct",
+      "visitors": 600
+    },
+    {
+      "week_start_date": "2026-02-16",
+      "channel_key": "organic",
+      "visitors": 1860
+    },
+    {
+      "week_start_date": "2026-02-16",
+      "channel_key": "cpc_direct",
+      "visitors": 1250
+    },
+    {
+      "week_start_date": "2026-02-16",
+      "channel_key": "direct",
+      "visitors": 640
+    },
+    {
+      "week_start_date": "2026-02-23",
+      "channel_key": "organic",
+      "visitors": 1970
+    },
+    {
+      "week_start_date": "2026-02-23",
+      "channel_key": "cpc_direct",
+      "visitors": 1325
+    },
+    {
+      "week_start_date": "2026-02-23",
+      "channel_key": "direct",
+      "visitors": 680
+    }
+  ],
+  "weekly_ozon": [
+    {
+      "week_start_date": "2026-01-05",
+      "outlet_code": "OZON",
+      "oz_rev": "0",
+      "oz_ord": 0,
+      "oz_ret_n": 0,
+      "oz_ret_sum": "0",
+      "oz_ad_spend": "0"
+    },
+    {
+      "week_start_date": "2026-01-12",
+      "outlet_code": "OZON",
+      "oz_rev": "44200",
+      "oz_ord": 15,
+      "oz_ret_n": 2,
+      "oz_ret_sum": "1547.00",
+      "oz_ad_spend": "5304.00"
+    },
+    {
+      "week_start_date": "2026-01-19",
+      "outlet_code": "OZON",
+      "oz_rev": "46400",
+      "oz_ord": 16,
+      "oz_ret_n": 2,
+      "oz_ret_sum": "1624.00",
+      "oz_ad_spend": "5568.00"
+    },
+    {
+      "week_start_date": "2026-01-26",
+      "outlet_code": "OZON",
+      "oz_rev": "48600",
+      "oz_ord": 17,
+      "oz_ret_n": 2,
+      "oz_ret_sum": "1701.00",
+      "oz_ad_spend": "5832.00"
+    },
+    {
+      "week_start_date": "2026-02-02",
+      "outlet_code": "OZON",
+      "oz_rev": "50800",
+      "oz_ord": 18,
+      "oz_ret_n": 2,
+      "oz_ret_sum": "1778.00",
+      "oz_ad_spend": "6096.00"
+    },
+    {
+      "week_start_date": "2026-02-09",
+      "outlet_code": "OZON",
+      "oz_rev": "53000",
+      "oz_ord": 18,
+      "oz_ret_n": 2,
+      "oz_ret_sum": "1855.00",
+      "oz_ad_spend": "6360.00"
+    },
+    {
+      "week_start_date": "2026-02-16",
+      "outlet_code": "OZON",
+      "oz_rev": "55200",
+      "oz_ord": 19,
+      "oz_ret_n": 2,
+      "oz_ret_sum": "1932.00",
+      "oz_ad_spend": "6624.00"
+    },
+    {
+      "week_start_date": "2026-02-23",
+      "outlet_code": "OZON",
+      "oz_rev": "57400",
+      "oz_ord": 20,
+      "oz_ret_n": 2,
+      "oz_ret_sum": "2009.00",
+      "oz_ad_spend": "6888.00"
+    }
+  ],
+  "reputation_snapshots": [
+    {
+      "outlet_code": "NOVOGRAD",
+      "platform": "2gis",
+      "snapshot_date": "2026-01-05",
+      "rating": "4.25",
+      "review_cnt": 28
+    },
+    {
+      "outlet_code": "SVERDLOV",
+      "platform": "2gis",
+      "snapshot_date": "2026-01-05",
+      "rating": "4.25",
+      "review_cnt": 28
+    },
+    {
+      "outlet_code": "NOVOGRAD",
+      "platform": "yandex",
+      "snapshot_date": "2026-01-05",
+      "rating": "4.25",
+      "review_cnt": 28
+    },
+    {
+      "outlet_code": "SVERDLOV",
+      "platform": "yandex",
+      "snapshot_date": "2026-01-05",
+      "rating": "4.25",
+      "review_cnt": 28
+    },
+    {
+      "outlet_code": "NOVOGRAD",
+      "platform": "2gis",
+      "snapshot_date": "2026-01-12",
+      "rating": "4.32",
+      "review_cnt": 32
+    },
+    {
+      "outlet_code": "SVERDLOV",
+      "platform": "2gis",
+      "snapshot_date": "2026-01-12",
+      "rating": "4.32",
+      "review_cnt": 32
+    },
+    {
+      "outlet_code": "NOVOGRAD",
+      "platform": "yandex",
+      "snapshot_date": "2026-01-12",
+      "rating": "4.32",
+      "review_cnt": 32
+    },
+    {
+      "outlet_code": "SVERDLOV",
+      "platform": "yandex",
+      "snapshot_date": "2026-01-12",
+      "rating": "4.32",
+      "review_cnt": 32
+    },
+    {
+      "outlet_code": "NOVOGRAD",
+      "platform": "2gis",
+      "snapshot_date": "2026-01-19",
+      "rating": "4.39",
+      "review_cnt": 36
+    },
+    {
+      "outlet_code": "SVERDLOV",
+      "platform": "2gis",
+      "snapshot_date": "2026-01-19",
+      "rating": "4.39",
+      "review_cnt": 36
+    },
+    {
+      "outlet_code": "NOVOGRAD",
+      "platform": "yandex",
+      "snapshot_date": "2026-01-19",
+      "rating": "4.39",
+      "review_cnt": 36
+    },
+    {
+      "outlet_code": "SVERDLOV",
+      "platform": "yandex",
+      "snapshot_date": "2026-01-19",
+      "rating": "4.39",
+      "review_cnt": 36
+    },
+    {
+      "outlet_code": "NOVOGRAD",
+      "platform": "2gis",
+      "snapshot_date": "2026-01-26",
+      "rating": "4.46",
+      "review_cnt": 40
+    },
+    {
+      "outlet_code": "SVERDLOV",
+      "platform": "2gis",
+      "snapshot_date": "2026-01-26",
+      "rating": "4.46",
+      "review_cnt": 40
+    },
+    {
+      "outlet_code": "NOVOGRAD",
+      "platform": "yandex",
+      "snapshot_date": "2026-01-26",
+      "rating": "4.46",
+      "review_cnt": 40
+    },
+    {
+      "outlet_code": "SVERDLOV",
+      "platform": "yandex",
+      "snapshot_date": "2026-01-26",
+      "rating": "4.46",
+      "review_cnt": 40
+    },
+    {
+      "outlet_code": "NOVOGRAD",
+      "platform": "2gis",
+      "snapshot_date": "2026-02-02",
+      "rating": "4.53",
+      "review_cnt": 44
+    },
+    {
+      "outlet_code": "SVERDLOV",
+      "platform": "2gis",
+      "snapshot_date": "2026-02-02",
+      "rating": "4.53",
+      "review_cnt": 44
+    },
+    {
+      "outlet_code": "NOVOGRAD",
+      "platform": "yandex",
+      "snapshot_date": "2026-02-02",
+      "rating": "4.53",
+      "review_cnt": 44
+    },
+    {
+      "outlet_code": "SVERDLOV",
+      "platform": "yandex",
+      "snapshot_date": "2026-02-02",
+      "rating": "4.53",
+      "review_cnt": 44
+    },
+    {
+      "outlet_code": "NOVOGRAD",
+      "platform": "2gis",
+      "snapshot_date": "2026-02-09",
+      "rating": "4.25",
+      "review_cnt": 48
+    },
+    {
+      "outlet_code": "SVERDLOV",
+      "platform": "2gis",
+      "snapshot_date": "2026-02-09",
+      "rating": "4.25",
+      "review_cnt": 48
+    },
+    {
+      "outlet_code": "NOVOGRAD",
+      "platform": "yandex",
+      "snapshot_date": "2026-02-09",
+      "rating": "4.25",
+      "review_cnt": 48
+    },
+    {
+      "outlet_code": "SVERDLOV",
+      "platform": "yandex",
+      "snapshot_date": "2026-02-09",
+      "rating": "4.25",
+      "review_cnt": 48
+    },
+    {
+      "outlet_code": "NOVOGRAD",
+      "platform": "2gis",
+      "snapshot_date": "2026-02-16",
+      "rating": "4.32",
+      "review_cnt": 52
+    },
+    {
+      "outlet_code": "SVERDLOV",
+      "platform": "2gis",
+      "snapshot_date": "2026-02-16",
+      "rating": "4.32",
+      "review_cnt": 52
+    },
+    {
+      "outlet_code": "NOVOGRAD",
+      "platform": "yandex",
+      "snapshot_date": "2026-02-16",
+      "rating": "4.32",
+      "review_cnt": 52
+    },
+    {
+      "outlet_code": "SVERDLOV",
+      "platform": "yandex",
+      "snapshot_date": "2026-02-16",
+      "rating": "4.32",
+      "review_cnt": 52
+    },
+    {
+      "outlet_code": "NOVOGRAD",
+      "platform": "2gis",
+      "snapshot_date": "2026-02-23",
+      "rating": "4.39",
+      "review_cnt": 56
+    },
+    {
+      "outlet_code": "SVERDLOV",
+      "platform": "2gis",
+      "snapshot_date": "2026-02-23",
+      "rating": "4.39",
+      "review_cnt": 56
+    },
+    {
+      "outlet_code": "NOVOGRAD",
+      "platform": "yandex",
+      "snapshot_date": "2026-02-23",
+      "rating": "4.39",
+      "review_cnt": 56
+    },
+    {
+      "outlet_code": "SVERDLOV",
+      "platform": "yandex",
+      "snapshot_date": "2026-02-23",
+      "rating": "4.39",
+      "review_cnt": 56
+    }
+  ],
+  "_reference_functions": {
+    "formulas": "gp_api/seed/data.py",
+    "insert_logic": "gp_api/seed/cli.py"
+  }
+}

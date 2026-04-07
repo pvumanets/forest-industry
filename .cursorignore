@@ -1,0 +1,28 @@
+﻿# Зависимости и кэши пакетных менеджеров
+node_modules/
+.pnpm-store/
+
+# Сборки и артефакты фронта
+dist/
+build/
+.next/
+.nuxt/
+out/
+storybook-static/
+
+# Python: окружения и кэши
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+*.egg-info/
+
+# Покрытие и отчёты
+coverage/
+htmlcov/
+.nyc_output/
+
+# Прочее из .gitignore (тяжёлые/внешние копии)
+.mui-ref/

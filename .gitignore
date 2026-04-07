@@ -1,0 +1,16 @@
+.cursor/
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.env
+node_modules/
+dist/
+.pnpm-store/
+.idea/
+.vscode/
+*.egg-info/
+.pytest_cache/
+htmlcov/
+.mui-ref/
+apps/web/debug-*.log
