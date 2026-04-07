@@ -348,6 +348,24 @@ def test_phase6_summary_rolling_4w_anchor_param(client: TestClient) -> None:
     _with_today(run)
 
 
+def test_phase6_summary_rolling_4w_outlet_code_novograd(client: TestClient) -> None:
+    """Rolling + outlet_code: раньше 500 из‑за перепутанных week_id / дат в агрегаторах."""
+    _login_owner(client)
+
+    def run() -> None:
+        r = client.get(
+            "/api/dashboard/summary",
+            params={"period": "rolling_4w", "outlet_code": "NOVOGRAD"},
+        )
+        assert r.status_code == 200, r.text
+        body = r.json()
+        assert body.get("outlet_code") == "NOVOGRAD"
+        ids = {k["id"] for k in body["blocks"]["outlets"]["kpis"]}
+        assert "OFF-REV-SUM" in ids
+
+    _with_today(run)
+
+
 def test_phase6_summary_outlet_code_422(client: TestClient) -> None:
     _login_owner(client)
 

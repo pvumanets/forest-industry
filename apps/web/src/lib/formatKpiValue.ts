@@ -26,13 +26,19 @@ export function formatKpiValue(id: string, v: number | null): string {
     id === "WEB-TRF-TOT" ||
     id === "DER-ORD-TOT" ||
     id === "OFF-ORD" ||
+    id === "OFF-ORD-SUM" ||
     id === "OZ-ORD" ||
     id === "OZ-RET-N" ||
     id === "REP-REV-CNT-TOT" ||
     id === "OFF-RET-N-TOT" ||
+    id === "DER-RET-N-TOT" ||
     id === "REP-REV-DELTA"
   ) {
     return intFmt.format(v);
+  }
+
+  if (id === "DER-OZ-SHARE") {
+    return `${dec4.format(v)}%`;
   }
 
   if (id === "WEB-BEH-BOUNCE") {

@@ -11,7 +11,7 @@ function renderWithRouter(ui: ReactElement) {
 describe("SaveSuccessToast", () => {
   it("ничего не рендерит при visible=false", () => {
     const { container } = renderWithRouter(
-      <SaveSuccessToast visible={false} action={{ label: "Дашборд", to: "/dashboard" }} />,
+      <SaveSuccessToast visible={false} action={{ label: "Сводка", to: "/dashboard" }} />,
     );
     expect(container.querySelector('[role="status"]')).toBeNull();
   });
@@ -34,10 +34,10 @@ describe("SaveSuccessToast", () => {
     renderWithRouter(
       <SaveSuccessToast
         visible
-        action={{ label: "Открыть дашборд", to: "/dashboard" }}
+        action={{ label: "Открыть сводку", to: "/dashboard" }}
       />,
     );
-    const link = screen.getByRole("link", { name: "Открыть дашборд" });
+    const link = screen.getByRole("link", { name: "Открыть сводку" });
     expect(link).toHaveAttribute("href", "/dashboard");
   });
 });

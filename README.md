@@ -55,7 +55,10 @@ powershell -ExecutionPolicy Bypass -File scripts/start-dev-ui.ps1
      1) Убедитесь, что `docker compose` запускается **из корня этого репозитория** (там же, где лежит папка `apps/web` с актуальными файлами в Cursor).  
      2) Проверьте, что **внутри контейнера** тот же текст:  
         `docker compose exec web sh -c "grep -c Нужен доступ /app/src/pages/LoginPage.tsx"` — должно вывести число **больше 0** (если контейнер не запущен: `docker compose run --rm web sh -c "grep -c Нужен доступ /app/src/pages/LoginPage.tsx"`). Если **0** — Compose смотрит на **другую** копию `apps/web` на диске.  
-     3) Сбросьте том с `node_modules` фронта и поднимите заново (зависимости переустановятся при старте):  
+     3) **Новые npm-зависимости во фронте:** том `web_node_modules` не совпадает с хостовым `node_modules`. При `docker compose up` сервис `web` сам запускает `pnpm install`, если изменился `pnpm-lock.yaml` (см. `docker-compose.yml`). Если Vite всё равно ругается на отсутствующий пакет:  
+        `docker compose exec web pnpm install --frozen-lockfile`  
+        затем `docker compose restart web`.  
+     4) Сбросьте том с `node_modules` фронта и поднимите заново (если нужно «с нуля»):  
         `docker compose stop web`  
         `docker volume rm forest-industry_web_node_modules`  
         (имя тома посмотрите: `docker volume ls | findstr web_node` — префикс совпадает с именем каталога проекта.)  

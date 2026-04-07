@@ -5,32 +5,40 @@ import type { DashboardPeriod } from "../../api/dashboardTypes";
 import { getReportSeries } from "../../api/reportsApi";
 import { dashboardAnchorToSeriesRange } from "../../lib/dashboardSeriesRange";
 import { useNavigateOn401 } from "../../hooks/useNavigateOn401";
+import { dashboardHintLegacyTrends } from "../../lib/dashboardSectionHints";
 import { Spinner } from "../ui/spinner";
 import { DashboardTrendChartCard } from "./DashboardTrendChartCard";
+import { DashboardSectionHeading } from "./DashboardSectionHeading";
 
 export function DashboardTrendSection({
   period,
   anchor,
+  outletCode,
 }: {
   period: DashboardPeriod;
   anchor: string;
+  outletCode?: string | null;
 }) {
   const { from, to } = useMemo(
     () => dashboardAnchorToSeriesRange(period, anchor),
     [period, anchor],
   );
   const enabled = Boolean(anchor && from && to);
+  const oc =
+    outletCode && outletCode.trim().toUpperCase() !== "ALL"
+      ? outletCode.trim().toUpperCase()
+      : null;
 
   const siteQ = useQuery({
-    queryKey: ["dashboard", "series", "site", from, to],
-    queryFn: () => getReportSeries("site", from, to),
+    queryKey: ["dashboard", "series", "site", from, to, oc ?? "ALL"],
+    queryFn: () => getReportSeries("site", from, to, oc),
     enabled,
     staleTime: 30_000,
   });
 
   const outletsQ = useQuery({
-    queryKey: ["dashboard", "series", "outlets", from, to],
-    queryFn: () => getReportSeries("outlets", from, to),
+    queryKey: ["dashboard", "series", "outlets", from, to, oc ?? "ALL"],
+    queryFn: () => getReportSeries("outlets", from, to, oc),
     enabled,
     staleTime: 30_000,
   });
@@ -52,7 +60,12 @@ export function DashboardTrendSection({
 
   return (
     <section className="mb-2 mt-6">
-      <h2 className="mb-4 text-lg font-bold text-foreground">Динамика за период</h2>
+      <DashboardSectionHeading
+        title="Динамика за период"
+        hint={dashboardHintLegacyTrends}
+        hintAriaLabel="Подробнее: графики за календарный период"
+        className="mb-4"
+      />
       {loading ? (
         <div className="flex items-center gap-3 py-8 text-muted-foreground">
           <Spinner className="size-[22px] border-2" />

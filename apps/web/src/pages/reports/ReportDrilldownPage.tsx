@@ -102,7 +102,7 @@ export function ReportDrilldownPage({ variant }: { variant: Variant }) {
     <div>
       <nav className="mb-2 flex flex-wrap items-center gap-1 text-sm">
         <RouterLink to="/dashboard" className="font-semibold text-primary hover:underline">
-          Дашборд
+          Сводка
         </RouterLink>
         <span className="text-muted-foreground">/</span>
         <span className="text-muted-foreground">{cfg.crumb}</span>

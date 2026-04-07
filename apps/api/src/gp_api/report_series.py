@@ -181,8 +181,8 @@ def build_series_payload(
                 )
             series.extend(
                 [
-                    {"key": "DER-REV-TOT", "label": "Выручка всего", "points": pts_der_rev},
-                    {"key": "DER-ORD-TOT", "label": "Заказы всего", "points": pts_der_ord},
+                    {"key": "DER-REV-TOT", "label": "Выручка", "points": pts_der_rev},
+                    {"key": "DER-ORD-TOT", "label": "Заказы", "points": pts_der_ord},
                 ],
             )
 
@@ -206,8 +206,8 @@ def build_series_payload(
             )
         series.extend(
             [
-                {"key": "MKT-AD-CTX", "label": "Реклама: контекст (Директ)", "points": pts_ctx},
-                {"key": "MKT-AD-MAP", "label": "Реклама: карты", "points": pts_map},
+                {"key": "MKT-AD-CTX", "label": "Контекст", "points": pts_ctx},
+                {"key": "MKT-AD-MAP", "label": "Карты", "points": pts_map},
             ],
         )
 

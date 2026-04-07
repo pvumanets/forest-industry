@@ -501,12 +501,12 @@ def build_summary_payload(
         outlets_kpis: list[dict[str, Any]] = [
             {
                 "id": "DER-REV-TOT",
-                "label": "Выручка всего",
+                "label": "Выручка",
                 **kpi_triple(der_rev_p, der_rev_prev),
             },
             {
                 "id": "DER-ORD-TOT",
-                "label": "Заказы всего",
+                "label": "Заказы",
                 **kpi_triple(der_ord_p, der_ord_prev, round_cur=0),
             },
             {
@@ -622,18 +622,17 @@ def build_rolling_summary_payload(
 
     cur_starts = list(resolved.current_week_starts)
     prev_starts = list(resolved.previous_week_starts)
-    cur_ids, cur_ids_ordered = week_ids_in_order(db, cur_starts)
-    prev_ids, prev_ids_ordered = week_ids_in_order(db, prev_starts)
-    wow_c_starts = [resolved.wow_current_week_start]
-    wow_c_ids, wow_c_ordered = week_ids_in_order(db, wow_c_starts)
+    # week_ids_in_order → (ids, week_start_dates); в агрегаторы передаём только id недель.
+    cur_ids, _ = week_ids_in_order(db, cur_starts)
+    prev_ids, _ = week_ids_in_order(db, prev_starts)
+    wow_c_ids, _ = week_ids_in_order(db, [resolved.wow_current_week_start])
     wow_p_ids: list[int] = []
-    wow_p_ordered: list[int] = []
     if resolved.wow_previous_week_start:
-        wow_p_ids, wow_p_ordered = week_ids_in_order(db, [resolved.wow_previous_week_start])
+        wow_p_ids, _ = week_ids_in_order(db, [resolved.wow_previous_week_start])
 
     bc = _rolling_metric_bundle(
         db,
-        cur_ids_ordered,
+        cur_ids,
         ozon_id,
         offline_outlet_code=off_filter,
         company_der=company_scope,
@@ -641,17 +640,17 @@ def build_rolling_summary_payload(
     bp = (
         _rolling_metric_bundle(
             db,
-            prev_ids_ordered,
+            prev_ids,
             ozon_id,
             offline_outlet_code=off_filter,
             company_der=company_scope,
         )
-        if prev_ids_ordered
+        if prev_ids
         else None
     )
     bwc = _rolling_metric_bundle(
         db,
-        wow_c_ordered,
+        wow_c_ids,
         ozon_id,
         offline_outlet_code=off_filter,
         company_der=company_scope,
@@ -659,12 +658,12 @@ def build_rolling_summary_payload(
     bwp = (
         _rolling_metric_bundle(
             db,
-            wow_p_ordered,
+            wow_p_ids,
             ozon_id,
             offline_outlet_code=off_filter,
             company_der=company_scope,
         )
-        if wow_p_ordered
+        if wow_p_ids
         else None
     )
 
@@ -720,7 +719,7 @@ def build_rolling_summary_payload(
     # Возвраты — всегда по компании (офлайн все точки + Ozon)
     bc_all = _rolling_metric_bundle(
         db,
-        cur_ids_ordered,
+        cur_ids,
         ozon_id,
         offline_outlet_code=None,
         company_der=True,
@@ -728,17 +727,17 @@ def build_rolling_summary_payload(
     bp_all = (
         _rolling_metric_bundle(
             db,
-            prev_ids_ordered,
+            prev_ids,
             ozon_id,
             offline_outlet_code=None,
             company_der=True,
         )
-        if prev_ids_ordered
+        if prev_ids
         else None
     )
     bwc_all = _rolling_metric_bundle(
         db,
-        wow_c_ordered,
+        wow_c_ids,
         ozon_id,
         offline_outlet_code=None,
         company_der=True,
@@ -746,12 +745,12 @@ def build_rolling_summary_payload(
     bwp_all = (
         _rolling_metric_bundle(
             db,
-            wow_p_ordered,
+            wow_p_ids,
             ozon_id,
             offline_outlet_code=None,
             company_der=True,
         )
-        if wow_p_ordered
+        if wow_p_ids
         else None
     )
 
@@ -828,10 +827,10 @@ def build_rolling_summary_payload(
         },
     ]
 
-    oz_bc = aggregate_ozon(db, cur_ids_ordered, ozon_id)
-    oz_bp = aggregate_ozon(db, prev_ids_ordered, ozon_id) if prev_ids_ordered else None
-    oz_bwc = aggregate_ozon(db, wow_c_ordered, ozon_id)
-    oz_bwp = aggregate_ozon(db, wow_p_ordered, ozon_id) if wow_p_ordered else None
+    oz_bc = aggregate_ozon(db, cur_ids, ozon_id)
+    oz_bp = aggregate_ozon(db, prev_ids, ozon_id) if prev_ids else None
+    oz_bwc = aggregate_ozon(db, wow_c_ids, ozon_id)
+    oz_bwp = aggregate_ozon(db, wow_p_ids, ozon_id) if wow_p_ids else None
 
     oz_avg_c = None if oz_bc["oz_ord"] <= 0 else round(oz_bc["oz_rev"] / oz_bc["oz_ord"], 2)
     oz_avg_p = (
@@ -912,12 +911,12 @@ def build_rolling_summary_payload(
         outlets_kpis_roll: list[dict[str, Any]] = [
             {
                 "id": "DER-REV-TOT",
-                "label": "Выручка всего",
+                "label": "Выручка",
                 **kpi_triple_with_secondary(bc["der_rev"], _pm("der_rev"), bwc["der_rev"], _wowp("der_rev")),
             },
             {
                 "id": "DER-ORD-TOT",
-                "label": "Заказы всего",
+                "label": "Заказы",
                 **kpi_triple_with_secondary(
                     bc["der_ord"],
                     _pm("der_ord"),

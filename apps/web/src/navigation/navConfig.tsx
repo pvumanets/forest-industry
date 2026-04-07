@@ -60,7 +60,7 @@ export function navForRole(role: UserRole): { primary: NavItem[]; reports: NavIt
   const primary: NavItem[] = [
     {
       to: "/dashboard",
-      label: "Дашборд",
+      label: "Сводка",
       end: true,
       icon: LayoutDashboard,
     },

@@ -3,7 +3,7 @@ import { useMemo } from "react";
 import { useLocation } from "react-router-dom";
 
 const PATH_LABELS: { prefix: string; label: string }[] = [
-  { prefix: "/dashboard", label: "Дашборд" },
+  { prefix: "/dashboard", label: "Сводка" },
   { prefix: "/entry/week", label: "Ввод за неделю" },
   { prefix: "/entry/offline", label: "Ввод по точке" },
   { prefix: "/reports/site", label: "Отчёт: сайт" },

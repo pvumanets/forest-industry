@@ -1,6 +1,8 @@
 export type ReportApiTopic =
   | "site"
   | "outlets"
+  | "company"
+  | "marketing"
   | "maps-2gis"
   | "maps-yandex"
   | "ozon"

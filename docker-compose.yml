@@ -72,9 +72,11 @@ services:
       - -c
       - |
         set -e
-        if [ ! -f node_modules/.bin/vite ]; then
-          echo "gp-web: pnpm install (пустой том node_modules)..."
+        STAMP=node_modules/.gp-pnpm-lock-stamp
+        if [ ! -f node_modules/.bin/vite ] || [ ! -f "$$STAMP" ] || ! cmp -s pnpm-lock.yaml "$$STAMP"; then
+          echo "gp-web: pnpm install (новый том, нет vite или изменился pnpm-lock.yaml)..."
           pnpm install --frozen-lockfile
+          cp pnpm-lock.yaml "$$STAMP"
         fi
         rm -rf node_modules/.vite
         exec pnpm dev --host 0.0.0.0 --port 5173

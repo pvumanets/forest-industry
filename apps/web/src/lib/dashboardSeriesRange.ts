@@ -12,10 +12,12 @@ export function formatIsoDate(d: Date): string {
 /**
  * Диапазон дат для GET /api/reports/.../series в духе выбранного периода дашборда.
  * Совпадает с границами недели (Пн–Вс), календарного месяца и квартала по anchor.
+ * Для rolling_4w: `anchor` — понедельник **последней** недели окна; по умолчанию 12 недель до воскресенья этой недели.
  */
 export function dashboardAnchorToSeriesRange(
   period: DashboardPeriod,
   anchor: string,
+  trailingWeeks: number = 12,
 ): { from: string; to: string } {
   if (!anchor) {
     return { from: "", to: "" };
@@ -25,6 +27,15 @@ export function dashboardAnchorToSeriesRange(
   const yy = parts[0]!;
   const mm = parts[1]!;
   const dd = parts[2] ?? 1;
+
+  if (period === "rolling_4w") {
+    const endMonday = new Date(yy, mm - 1, dd);
+    const endSunday = new Date(endMonday);
+    endSunday.setDate(endSunday.getDate() + 6);
+    const startMonday = new Date(endMonday);
+    startMonday.setDate(startMonday.getDate() - (trailingWeeks - 1) * 7);
+    return { from: formatIsoDate(startMonday), to: formatIsoDate(endSunday) };
+  }
 
   if (period === "week") {
     const start = new Date(yy, mm - 1, dd);
