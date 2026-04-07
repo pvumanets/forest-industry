@@ -241,6 +241,55 @@ def test_phase6_422_bad_topic(client: TestClient) -> None:
     _with_today(run)
 
 
+def test_phase6_summary_rolling_4w(client: TestClient) -> None:
+    """Rolling 4w: структура ответа, DER-REV-TOT включает Ozon, secondary у KPI."""
+    _login_owner(client)
+
+    def run() -> None:
+        r = client.get("/api/dashboard/summary", params={"period": "rolling_4w"})
+        assert r.status_code == 200, r.text
+        body = r.json()
+        assert body["period"] == "rolling_4w"
+        assert "week_starts" in body
+        assert len(body["week_starts"]) == 4
+        assert body.get("outlet_code") == "ALL"
+        assert "updated_at_max" in body
+        der = next(x for x in body["blocks"]["outlets"]["kpis"] if x["id"] == "DER-REV-TOT")
+        assert der["current"] is not None
+        assert "comparison" in der
+        assert "secondary_comparison" in der
+        assert "secondary_previous" in der
+
+    _with_today(run)
+
+
+def test_phase6_summary_rolling_4w_anchor_param(client: TestClient) -> None:
+    _login_owner(client)
+
+    def run() -> None:
+        r = client.get(
+            "/api/dashboard/summary",
+            params={"period": "rolling_4w", "anchor": "2026-03-23"},
+        )
+        assert r.status_code == 200, r.text
+        assert r.json()["anchor"] == "2026-03-23"
+
+    _with_today(run)
+
+
+def test_phase6_summary_outlet_code_422(client: TestClient) -> None:
+    _login_owner(client)
+
+    def run() -> None:
+        r = client.get(
+            "/api/dashboard/summary",
+            params={"period": "week", "anchor": ANCHOR_WEEK.isoformat(), "outlet_code": "UNKNOWN"},
+        )
+        assert r.status_code == 422
+
+    _with_today(run)
+
+
 def test_phase6_future_anchor_422(client: TestClient) -> None:
     _login_owner(client)
     app.dependency_overrides[get_today_yekaterinburg] = lambda: TDAY

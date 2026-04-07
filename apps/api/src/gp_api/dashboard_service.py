@@ -3,14 +3,19 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta
 from typing import Any
 
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from gp_api.dashboard_comparison import kpi_comparison
-from gp_api.dashboard_periods import PeriodKind, month_bounds, quarter_bounds
+from gp_api.dashboard_periods import (
+    PeriodKind,
+    ResolvedRollingFourWeeks,
+    month_bounds,
+    quarter_bounds,
+)
 from gp_api.models.tables import (
     Outlet,
     ReportingWeek,
@@ -48,7 +53,12 @@ class OfflineOutletAgg:
     off_ret_sum: float
 
 
-def aggregate_offline_by_outlet(db: Session, week_ids: list[int]) -> list[OfflineOutletAgg]:
+def aggregate_offline_by_outlet(
+    db: Session,
+    week_ids: list[int],
+    *,
+    outlet_code: str | None = None,
+) -> list[OfflineOutletAgg]:
     if not week_ids:
         return []
     q = (
@@ -65,8 +75,12 @@ def aggregate_offline_by_outlet(db: Session, week_ids: list[int]) -> list[Offlin
             WeeklyOfflineMetric.week_id.in_(week_ids),
             Outlet.is_virtual.is_(False),
         )
-        .group_by(Outlet.id, Outlet.code, Outlet.display_name, Outlet.sort_order)
-        .order_by(Outlet.sort_order, Outlet.code)
+    )
+    if outlet_code:
+        q = q.where(Outlet.code == outlet_code)
+    q = q.group_by(Outlet.id, Outlet.code, Outlet.display_name, Outlet.sort_order).order_by(
+        Outlet.sort_order,
+        Outlet.code,
     )
     rows = db.execute(q).all()
     return [
@@ -203,6 +217,138 @@ def kpi_triple(
     }
 
 
+def kpi_triple_with_secondary(
+    cur: float | None,
+    prev_main: float | None,
+    wow_cur: float | None,
+    wow_prev: float | None,
+    *,
+    round_cur: int | None = 2,
+) -> dict[str, Any]:
+    out = kpi_triple(cur, prev_main, round_cur=round_cur)
+    if wow_cur is None or wow_prev is None:
+        return out
+    wp = round(wow_prev, round_cur) if round_cur is not None else wow_prev
+    wc = round(wow_cur, round_cur) if round_cur is not None else wow_cur
+    out["secondary_previous"] = wp
+    out["secondary_comparison"] = kpi_comparison(wc, wp)
+    return out
+
+
+def sum_marketing_site_totals(db: Session, week_ids: list[int]) -> tuple[float, float]:
+    if not week_ids:
+        return 0.0, 0.0
+    row = db.execute(
+        select(
+            func.coalesce(func.sum(WeeklyMarketingSite.mkt_ad_ctx), 0),
+            func.coalesce(func.sum(WeeklyMarketingSite.mkt_ad_map), 0),
+        ).where(WeeklyMarketingSite.week_id.in_(week_ids)),
+    ).one()
+    return float(row[0]), float(row[1])
+
+
+def max_dashboard_updated_at(
+    db: Session,
+    week_ids: list[int],
+    *,
+    reputation_start: date | None = None,
+    reputation_end: date | None = None,
+    physical_outlet_ids: list[int] | None = None,
+) -> datetime | None:
+    candidates: list[datetime] = []
+    if week_ids:
+        uo = db.scalar(
+            select(func.max(WeeklyOfflineMetric.updated_at)).where(
+                WeeklyOfflineMetric.week_id.in_(week_ids),
+            ),
+        )
+        if uo is not None:
+            candidates.append(uo)
+        um = db.scalar(
+            select(func.max(WeeklyMarketingSite.updated_at)).where(
+                WeeklyMarketingSite.week_id.in_(week_ids),
+            ),
+        )
+        if um is not None:
+            candidates.append(um)
+        uz = db.scalar(
+            select(func.max(WeeklyOzon.updated_at)).where(WeeklyOzon.week_id.in_(week_ids)),
+        )
+        if uz is not None:
+            candidates.append(uz)
+    if (
+        reputation_start is not None
+        and reputation_end is not None
+        and physical_outlet_ids
+    ):
+        ur = db.scalar(
+            select(func.max(ReputationSnapshot.created_at)).where(
+                ReputationSnapshot.outlet_id.in_(physical_outlet_ids),
+                ReputationSnapshot.snapshot_date >= reputation_start,
+                ReputationSnapshot.snapshot_date <= reputation_end,
+            ),
+        )
+        if ur is not None:
+            candidates.append(ur)
+    if not candidates:
+        return None
+    return max(candidates)
+
+
+def _rolling_metric_bundle(
+    db: Session,
+    week_ids_ordered: list[int],
+    ozon_id: int,
+    *,
+    offline_outlet_code: str | None,
+    company_der: bool,
+) -> dict[str, Any]:
+    off = aggregate_offline_by_outlet(
+        db,
+        week_ids_ordered,
+        outlet_code=offline_outlet_code,
+    )
+    oz = aggregate_ozon(db, week_ids_ordered, ozon_id)
+    mctx, mmap = sum_marketing_site_totals(db, week_ids_ordered)
+    trf = sum_web_trf_tot(db, week_ids_ordered)
+    bounce, time_val = weighted_site_behavior(db, week_ids_ordered)
+    off_rev = sum(x.off_rev for x in off)
+    off_ord = sum(x.off_ord for x in off)
+    off_ret_n = sum(x.off_ret_n for x in off)
+    off_ret_sum = sum(x.off_ret_sum for x in off)
+    if company_der:
+        der_rev = off_rev + oz["oz_rev"]
+        der_ord = off_ord + oz["oz_ord"]
+    else:
+        der_rev = off_rev
+        der_ord = off_ord
+    der_ret_sum = off_ret_sum + oz["oz_ret_sum"]
+    der_ret_n = off_ret_n + oz["oz_ret_n"]
+    der_ad = mctx + mmap + oz["oz_ad_spend"]
+    oz_share_pct = None if der_rev <= 0 else round(oz["oz_rev"] / der_rev * 100.0, 4)
+    der_avg_co = None if der_ord <= 0 else round(der_rev / der_ord, 2)
+    oz_avg = None if oz["oz_ord"] <= 0 else round(oz["oz_rev"] / oz["oz_ord"], 2)
+    return {
+        "off": off,
+        "oz": oz,
+        "off_rev": off_rev,
+        "off_ord": off_ord,
+        "off_ret_n": off_ret_n,
+        "off_ret_sum": off_ret_sum,
+        "der_rev": der_rev,
+        "der_ord": der_ord,
+        "der_ret_sum": der_ret_sum,
+        "der_ret_n": der_ret_n,
+        "der_ad": der_ad,
+        "oz_share_pct": oz_share_pct,
+        "der_avg_co": der_avg_co,
+        "oz_avg": oz_avg,
+        "trf": trf,
+        "bounce": bounce,
+        "time_val": time_val,
+    }
+
+
 def build_summary_payload(
     db: Session,
     *,
@@ -211,6 +357,7 @@ def build_summary_payload(
     p_week_starts: list[date],
     p_prev_week_starts: list[date],
     previous_anchor: date,
+    outlet_code: str | None = None,
 ) -> dict[str, Any]:
     p_ids, _ = week_ids_in_order(db, p_week_starts)
     prev_ids, _ = week_ids_in_order(db, p_prev_week_starts)
@@ -222,25 +369,34 @@ def build_summary_payload(
         msg = "OZON outlet missing"
         raise RuntimeError(msg)
 
+    off_filter = outlet_code
+    company_scope = off_filter is None
+
     # --- P metrics
-    off_p = aggregate_offline_by_outlet(db, p_ids)
+    off_p = aggregate_offline_by_outlet(db, p_ids, outlet_code=off_filter)
     trf_p = sum_web_trf_tot(db, p_ids)
     bounce_p, time_p = weighted_site_behavior(db, p_ids)
     oz_p = aggregate_ozon(db, p_ids, ozon_id)
+    mctx_p, mmap_p = sum_marketing_site_totals(db, p_ids)
+    der_ad_p = mctx_p + mmap_p + oz_p["oz_ad_spend"]
 
     cal_p0, cal_p1 = reputation_calendar_range(period, anchor, p_week_starts)
     best_p = maps_last_in_range(db, phys_ids, cal_p0, cal_p1)
 
-    der_rev_p = sum(x.off_rev for x in off_p)
-    der_ord_p = sum(x.off_ord for x in off_p)
+    off_rev_p = sum(x.off_rev for x in off_p)
+    off_ord_p = sum(x.off_ord for x in off_p)
+    der_rev_p = off_rev_p + (oz_p["oz_rev"] if company_scope else 0.0)
+    der_ord_p = off_ord_p + (oz_p["oz_ord"] if company_scope else 0.0)
     off_ret_n_p = sum(x.off_ret_n for x in off_p)
     off_ret_sum_p = sum(x.off_ret_sum for x in off_p)
 
     # --- P_prev
-    off_prev = aggregate_offline_by_outlet(db, prev_ids)
+    off_prev = aggregate_offline_by_outlet(db, prev_ids, outlet_code=off_filter)
     trf_prev = sum_web_trf_tot(db, prev_ids)
     bounce_prev, time_prev = weighted_site_behavior(db, prev_ids)
     oz_prev = aggregate_ozon(db, prev_ids, ozon_id)
+    mctx_pr, mmap_pr = sum_marketing_site_totals(db, prev_ids)
+    der_ad_pr = mctx_pr + mmap_pr + oz_prev["oz_ad_spend"]
 
     if period == "week" and p_prev_week_starts:
         cal_prev0 = p_prev_week_starts[0]
@@ -257,8 +413,10 @@ def build_summary_payload(
         raise ValueError(msg)
     best_prev = maps_last_in_range(db, phys_ids, cal_prev0, cal_prev1)
 
-    der_rev_prev = sum(x.off_rev for x in off_prev)
-    der_ord_prev = sum(x.off_ord for x in off_prev)
+    off_rev_prev = sum(x.off_rev for x in off_prev)
+    off_ord_prev = sum(x.off_ord for x in off_prev)
+    der_rev_prev = off_rev_prev + (oz_prev["oz_rev"] if company_scope else 0.0)
+    der_ord_prev = off_ord_prev + (oz_prev["oz_ord"] if company_scope else 0.0)
     off_ret_n_prev = sum(x.off_ret_n for x in off_prev)
     off_ret_sum_prev = sum(x.off_ret_sum for x in off_prev)
 
@@ -339,19 +497,53 @@ def build_summary_payload(
             },
         )
 
-    outlets_block = {
-        "kpis": [
+    if company_scope:
+        outlets_kpis: list[dict[str, Any]] = [
             {
                 "id": "DER-REV-TOT",
-                "label": "Выручка офлайн, всего",
+                "label": "Выручка всего",
                 **kpi_triple(der_rev_p, der_rev_prev),
             },
             {
                 "id": "DER-ORD-TOT",
-                "label": "Заказы офлайн, всего",
+                "label": "Заказы всего",
                 **kpi_triple(der_ord_p, der_ord_prev, round_cur=0),
             },
-        ],
+            {
+                "id": "DER-AD-TOTAL",
+                "label": "Расходы на рекламу всего",
+                **kpi_triple(der_ad_p, der_ad_pr),
+            },
+        ]
+    else:
+        avg_p = None if off_ord_p <= 0 else round(off_rev_p / off_ord_p, 2)
+        avg_pr = None if off_ord_prev <= 0 else round(off_rev_prev / off_ord_prev, 2)
+        oc = off_filter or ""
+        outlets_kpis = [
+            {
+                "id": "OFF-REV-SUM",
+                "label": f"Выручка ({oc})",
+                **kpi_triple(off_rev_p, off_rev_prev),
+            },
+            {
+                "id": "OFF-ORD-SUM",
+                "label": f"Заказы ({oc})",
+                **kpi_triple(off_ord_p, off_ord_prev, round_cur=0),
+            },
+            {
+                "id": "OFF-AVG-CHK-SUM",
+                "label": f"Средний чек ({oc})",
+                **kpi_triple(avg_p, avg_pr),
+            },
+            {
+                "id": "DER-AD-TOTAL",
+                "label": "Расходы на рекламу всего",
+                **kpi_triple(der_ad_p, der_ad_pr),
+            },
+        ]
+
+    outlets_block = {
+        "kpis": outlets_kpis,
         "by_outlet": outlet_sub,
     }
 
@@ -399,6 +591,441 @@ def build_summary_payload(
         "period": period,
         "anchor": anchor.isoformat(),
         "previous_anchor": previous_anchor.isoformat(),
+        "outlet_code": "ALL" if company_scope else (off_filter or "ALL"),
+        "blocks": {
+            "site": {"kpis": site_kpis},
+            "outlets": outlets_block,
+            "maps_2gis": maps_block_for_platform("2gis"),
+            "maps_yandex": maps_block_for_platform("yandex"),
+            "ozon": {"kpis": ozon_kpis},
+            "returns": {"kpis": returns_kpis},
+        },
+    }
+
+
+def build_rolling_summary_payload(
+    db: Session,
+    *,
+    resolved: ResolvedRollingFourWeeks,
+    outlet_code: str | None = None,
+) -> dict[str, Any]:
+    """Сводка для period=rolling_4w (метрики реестра, двойное сравнение)."""
+    off_filter = outlet_code
+    company_scope = off_filter is None
+
+    phys = db.scalars(select(Outlet).where(Outlet.is_virtual.is_(False)).order_by(Outlet.sort_order)).all()
+    phys_ids = [o.id for o in phys]
+    ozon_id = db.scalar(select(Outlet.id).where(Outlet.code == "OZON"))
+    if ozon_id is None:
+        msg = "OZON outlet missing"
+        raise RuntimeError(msg)
+
+    cur_starts = list(resolved.current_week_starts)
+    prev_starts = list(resolved.previous_week_starts)
+    cur_ids, cur_ids_ordered = week_ids_in_order(db, cur_starts)
+    prev_ids, prev_ids_ordered = week_ids_in_order(db, prev_starts)
+    wow_c_starts = [resolved.wow_current_week_start]
+    wow_c_ids, wow_c_ordered = week_ids_in_order(db, wow_c_starts)
+    wow_p_ids: list[int] = []
+    wow_p_ordered: list[int] = []
+    if resolved.wow_previous_week_start:
+        wow_p_ids, wow_p_ordered = week_ids_in_order(db, [resolved.wow_previous_week_start])
+
+    bc = _rolling_metric_bundle(
+        db,
+        cur_ids_ordered,
+        ozon_id,
+        offline_outlet_code=off_filter,
+        company_der=company_scope,
+    )
+    bp = (
+        _rolling_metric_bundle(
+            db,
+            prev_ids_ordered,
+            ozon_id,
+            offline_outlet_code=off_filter,
+            company_der=company_scope,
+        )
+        if prev_ids_ordered
+        else None
+    )
+    bwc = _rolling_metric_bundle(
+        db,
+        wow_c_ordered,
+        ozon_id,
+        offline_outlet_code=off_filter,
+        company_der=company_scope,
+    )
+    bwp = (
+        _rolling_metric_bundle(
+            db,
+            wow_p_ordered,
+            ozon_id,
+            offline_outlet_code=off_filter,
+            company_der=company_scope,
+        )
+        if wow_p_ordered
+        else None
+    )
+
+    def _pm(key: str) -> Any:
+        return bp[key] if bp is not None else None
+
+    def _wowp(key: str) -> Any:
+        return bwp[key] if bwp is not None else None
+
+    prev_anchor_str = (
+        resolved.previous_week_starts[-1].isoformat() if resolved.previous_week_starts else None
+    )
+
+    cal_c0 = min(resolved.current_week_starts)
+    cal_c1 = max(resolved.current_week_starts) + timedelta(days=6)
+    best_p = maps_last_in_range(db, phys_ids, cal_c0, cal_c1)
+    if resolved.previous_week_starts:
+        cal_p0 = min(resolved.previous_week_starts)
+        cal_p1 = max(resolved.previous_week_starts) + timedelta(days=6)
+        best_prev = maps_last_in_range(db, phys_ids, cal_p0, cal_p1)
+    else:
+        best_prev = {}
+
+    def maps_block_for_platform(plat: str) -> dict[str, Any]:
+        fp = {k: v for k, v in best_p.items() if k[1] == plat}
+        fprev = {k: v for k, v in best_prev.items() if k[1] == plat}
+        ar_p, sr_p = maps_summary_from_best(fp)
+        ar_pr, sr_pr = maps_summary_from_best(fprev)
+        dlt = None if sr_p is None or sr_pr is None else sr_p - sr_pr
+        label = "2ГИС" if plat == "2gis" else "Яндекс"
+        return {
+            "kpis": [
+                {
+                    "id": "REP-RATING-AVG",
+                    "label": f"Средняя оценка ({label})",
+                    **kpi_triple(ar_p, ar_pr, round_cur=4),
+                },
+                {
+                    "id": "REP-REV-CNT-TOT",
+                    "label": f"Отзывы, всего ({label})",
+                    **kpi_triple(sr_p, sr_pr, round_cur=0),
+                },
+                {
+                    "id": "REP-REV-DELTA",
+                    "label": "Прирост отзывов к прошлому периоду",
+                    "current": None if dlt is None else int(dlt),
+                    "previous": None,
+                    "comparison": {"kind": "none"},
+                },
+            ]
+        }
+
+    # Возвраты — всегда по компании (офлайн все точки + Ozon)
+    bc_all = _rolling_metric_bundle(
+        db,
+        cur_ids_ordered,
+        ozon_id,
+        offline_outlet_code=None,
+        company_der=True,
+    )
+    bp_all = (
+        _rolling_metric_bundle(
+            db,
+            prev_ids_ordered,
+            ozon_id,
+            offline_outlet_code=None,
+            company_der=True,
+        )
+        if prev_ids_ordered
+        else None
+    )
+    bwc_all = _rolling_metric_bundle(
+        db,
+        wow_c_ordered,
+        ozon_id,
+        offline_outlet_code=None,
+        company_der=True,
+    )
+    bwp_all = (
+        _rolling_metric_bundle(
+            db,
+            wow_p_ordered,
+            ozon_id,
+            offline_outlet_code=None,
+            company_der=True,
+        )
+        if wow_p_ordered
+        else None
+    )
+
+    returns_kpis = [
+        {
+            "id": "OFF-RET-SUM-TOT",
+            "label": "Возвраты офлайн, сумма",
+            **kpi_triple_with_secondary(
+                sum(x.off_ret_sum for x in bc_all["off"]),
+                sum(x.off_ret_sum for x in bp_all["off"]) if bp_all else None,
+                sum(x.off_ret_sum for x in bwc_all["off"]),
+                sum(x.off_ret_sum for x in bwp_all["off"]) if bwp_all else None,
+            ),
+        },
+        {
+            "id": "OFF-RET-N-TOT",
+            "label": "Возвраты офлайн, шт.",
+            **kpi_triple_with_secondary(
+                sum(x.off_ret_n for x in bc_all["off"]),
+                sum(x.off_ret_n for x in bp_all["off"]) if bp_all else None,
+                sum(x.off_ret_n for x in bwc_all["off"]),
+                sum(x.off_ret_n for x in bwp_all["off"]) if bwp_all else None,
+                round_cur=0,
+            ),
+        },
+        {
+            "id": "OZ-RET-SUM",
+            "label": "Возвраты Ozon, сумма",
+            **kpi_triple_with_secondary(
+                bc_all["oz"]["oz_ret_sum"],
+                bp_all["oz"]["oz_ret_sum"] if bp_all else None,
+                bwc_all["oz"]["oz_ret_sum"],
+                bwp_all["oz"]["oz_ret_sum"] if bwp_all else None,
+            ),
+        },
+        {
+            "id": "OZ-RET-N",
+            "label": "Возвраты Ozon, шт.",
+            **kpi_triple_with_secondary(
+                bc_all["oz"]["oz_ret_n"],
+                bp_all["oz"]["oz_ret_n"] if bp_all else None,
+                bwc_all["oz"]["oz_ret_n"],
+                bwp_all["oz"]["oz_ret_n"] if bwp_all else None,
+                round_cur=0,
+            ),
+        },
+        {
+            "id": "DER-RET-SUM-TOT",
+            "label": "Возвраты, сумма (компания)",
+            **kpi_triple_with_secondary(
+                bc_all["der_ret_sum"],
+                bp_all["der_ret_sum"] if bp_all else None,
+                bwc_all["der_ret_sum"],
+                bwp_all["der_ret_sum"] if bwp_all else None,
+            ),
+        },
+    ]
+
+    site_kpis = [
+        {
+            "id": "WEB-TRF-TOT",
+            "label": "Посетители сайта, всего",
+            **kpi_triple_with_secondary(bc["trf"], _pm("trf"), bwc["trf"], _wowp("trf"), round_cur=0),
+        },
+        {
+            "id": "WEB-BEH-BOUNCE",
+            "label": "Отказы, %",
+            **kpi_triple_with_secondary(bc["bounce"], _pm("bounce"), bwc["bounce"], _wowp("bounce")),
+        },
+        {
+            "id": "WEB-BEH-TIME",
+            "label": "Длительность визита, сек",
+            **kpi_triple_with_secondary(bc["time_val"], _pm("time_val"), bwc["time_val"], _wowp("time_val")),
+        },
+    ]
+
+    oz_bc = aggregate_ozon(db, cur_ids_ordered, ozon_id)
+    oz_bp = aggregate_ozon(db, prev_ids_ordered, ozon_id) if prev_ids_ordered else None
+    oz_bwc = aggregate_ozon(db, wow_c_ordered, ozon_id)
+    oz_bwp = aggregate_ozon(db, wow_p_ordered, ozon_id) if wow_p_ordered else None
+
+    oz_avg_c = None if oz_bc["oz_ord"] <= 0 else round(oz_bc["oz_rev"] / oz_bc["oz_ord"], 2)
+    oz_avg_p = (
+        None
+        if oz_bp is None or oz_bp["oz_ord"] <= 0
+        else round(oz_bp["oz_rev"] / oz_bp["oz_ord"], 2)
+    )
+    oz_avg_wc = None if oz_bwc["oz_ord"] <= 0 else round(oz_bwc["oz_rev"] / oz_bwc["oz_ord"], 2)
+    oz_avg_wp = (
+        None if oz_bwp is None or oz_bwp["oz_ord"] <= 0 else round(oz_bwp["oz_rev"] / oz_bwp["oz_ord"], 2)
+    )
+
+    ozon_kpis = [
+        {
+            "id": "OZ-REV",
+            "label": "Выручка Ozon",
+            **kpi_triple_with_secondary(
+                oz_bc["oz_rev"],
+                oz_bp["oz_rev"] if oz_bp else None,
+                oz_bwc["oz_rev"],
+                oz_bwp["oz_rev"] if oz_bwp else None,
+            ),
+        },
+        {
+            "id": "OZ-ORD",
+            "label": "Заказы Ozon",
+            **kpi_triple_with_secondary(
+                oz_bc["oz_ord"],
+                oz_bp["oz_ord"] if oz_bp else None,
+                oz_bwc["oz_ord"],
+                oz_bwp["oz_ord"] if oz_bwp else None,
+                round_cur=0,
+            ),
+        },
+        {
+            "id": "OZ-AD-SPEND",
+            "label": "Реклама Ozon",
+            **kpi_triple_with_secondary(
+                oz_bc["oz_ad_spend"],
+                oz_bp["oz_ad_spend"] if oz_bp else None,
+                oz_bwc["oz_ad_spend"],
+                oz_bwp["oz_ad_spend"] if oz_bwp else None,
+            ),
+        },
+        {
+            "id": "OZ-AVG-CHK",
+            "label": "Средний чек Ozon",
+            **kpi_triple_with_secondary(oz_avg_c, oz_avg_p, oz_avg_wc, oz_avg_wp),
+        },
+    ]
+
+    p_by_code = {x.code: x for x in bc["off"]}
+    prev_by_code = {x.code: x for x in (bp["off"] if bp else [])}
+    outlet_sub: list[dict[str, Any]] = []
+    for o in phys:
+        row_p = p_by_code.get(o.code)
+        po = prev_by_code.get(o.code)
+        rev_p = row_p.off_rev if row_p else None
+        ord_p = row_p.off_ord if row_p else None
+        pr = po.off_rev if po else None
+        por = po.off_ord if po else None
+        avg = None if row_p is None or row_p.off_ord <= 0 else round(row_p.off_rev / row_p.off_ord, 2)
+        pavg = None if po is None or po.off_ord <= 0 else round(po.off_rev / po.off_ord, 2)
+        kpis = [
+            {"id": "OFF-REV", "label": "Выручка", **kpi_triple(rev_p, pr)},
+            {"id": "OFF-ORD", "label": "Заказы", **kpi_triple(ord_p, por, round_cur=0)},
+            {"id": "OFF-AVG-CHK", "label": "Средний чек", **kpi_triple(avg, pavg)},
+        ]
+        outlet_sub.append(
+            {
+                "outlet_code": o.code,
+                "display_name": o.display_name,
+                "kpis": kpis,
+            },
+        )
+
+    if company_scope:
+        outlets_kpis_roll: list[dict[str, Any]] = [
+            {
+                "id": "DER-REV-TOT",
+                "label": "Выручка всего",
+                **kpi_triple_with_secondary(bc["der_rev"], _pm("der_rev"), bwc["der_rev"], _wowp("der_rev")),
+            },
+            {
+                "id": "DER-ORD-TOT",
+                "label": "Заказы всего",
+                **kpi_triple_with_secondary(
+                    bc["der_ord"],
+                    _pm("der_ord"),
+                    bwc["der_ord"],
+                    _wowp("der_ord"),
+                    round_cur=0,
+                ),
+            },
+            {
+                "id": "DER-AVG-CHK-CO",
+                "label": "Средний чек компании",
+                **kpi_triple_with_secondary(
+                    bc["der_avg_co"],
+                    _pm("der_avg_co"),
+                    bwc["der_avg_co"],
+                    _wowp("der_avg_co"),
+                ),
+            },
+            {
+                "id": "DER-RET-SUM-TOT",
+                "label": "Возвраты, сумма (компания)",
+                **kpi_triple_with_secondary(
+                    bc["der_ret_sum"],
+                    _pm("der_ret_sum"),
+                    bwc["der_ret_sum"],
+                    _wowp("der_ret_sum"),
+                ),
+            },
+            {
+                "id": "DER-OZ-SHARE",
+                "label": "Доля выручки Ozon, %",
+                **kpi_triple_with_secondary(
+                    bc["oz_share_pct"],
+                    _pm("oz_share_pct"),
+                    bwc["oz_share_pct"],
+                    _wowp("oz_share_pct"),
+                    round_cur=4,
+                ),
+            },
+            {
+                "id": "DER-AD-TOTAL",
+                "label": "Расходы на рекламу всего",
+                **kpi_triple_with_secondary(bc["der_ad"], _pm("der_ad"), bwc["der_ad"], _wowp("der_ad")),
+            },
+        ]
+    else:
+        oc = off_filter or ""
+        outlets_kpis_roll = [
+            {
+                "id": "OFF-REV-SUM",
+                "label": f"Выручка ({oc})",
+                **kpi_triple_with_secondary(bc["off_rev"], _pm("off_rev"), bwc["off_rev"], _wowp("off_rev")),
+            },
+            {
+                "id": "OFF-ORD-SUM",
+                "label": f"Заказы ({oc})",
+                **kpi_triple_with_secondary(
+                    bc["off_ord"],
+                    _pm("off_ord"),
+                    bwc["off_ord"],
+                    _wowp("off_ord"),
+                    round_cur=0,
+                ),
+            },
+            {
+                "id": "OFF-AVG-CHK-SUM",
+                "label": f"Средний чек ({oc})",
+                **kpi_triple_with_secondary(
+                    bc["der_avg_co"],
+                    _pm("der_avg_co"),
+                    bwc["der_avg_co"],
+                    _wowp("der_avg_co"),
+                ),
+            },
+            {
+                "id": "DER-AD-TOTAL",
+                "label": "Расходы на рекламу всего",
+                **kpi_triple_with_secondary(bc["der_ad"], _pm("der_ad"), bwc["der_ad"], _wowp("der_ad")),
+            },
+        ]
+
+    outlets_block = {
+        "kpis": outlets_kpis_roll,
+        "by_outlet": outlet_sub,
+    }
+
+    all_week_ids = list({*cur_ids, *prev_ids, *wow_c_ids, *wow_p_ids})
+    rep_s = cal_c0
+    rep_e = cal_c1
+    if resolved.previous_week_starts:
+        rep_s = min(rep_s, min(resolved.previous_week_starts))
+        rep_e = max(rep_e, max(resolved.previous_week_starts) + timedelta(days=6))
+    u_at = max_dashboard_updated_at(
+        db,
+        all_week_ids,
+        reputation_start=rep_s,
+        reputation_end=rep_e,
+        physical_outlet_ids=phys_ids,
+    )
+    updated_at_max = u_at.isoformat() if u_at else None
+
+    return {
+        "period": "rolling_4w",
+        "anchor": resolved.anchor_end.isoformat(),
+        "previous_anchor": prev_anchor_str,
+        "week_starts": [d.isoformat() for d in resolved.current_week_starts],
+        "updated_at_max": updated_at_max,
+        "outlet_code": "ALL" if company_scope else (off_filter or "ALL"),
         "blocks": {
             "site": {"kpis": site_kpis},
             "outlets": outlets_block,
