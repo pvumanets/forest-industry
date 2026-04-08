@@ -4,6 +4,8 @@ import { EntryOfflinePage } from "../pages/EntryOfflinePage";
 import { EntryReputationPage } from "../pages/EntryReputationPage";
 import { EntryWeekPage } from "../pages/EntryWeekPage";
 import { LoginPage } from "../pages/LoginPage";
+import { PlaceholderSectionPage } from "../pages/PlaceholderSectionPage";
+import { ReportsListPage } from "../pages/ReportsListPage";
 import {
   ReportMaps2gisPage,
   ReportMapsYandexPage,
@@ -55,6 +57,46 @@ export function AppRoutes() {
           element={
             <RoleGuard allow={siteManagerOnly}>
               <EntryOfflinePage />
+            </RoleGuard>
+          }
+        />
+        <Route
+          path="entry/point-metrics"
+          element={
+            <RoleGuard allow={marketerOnly}>
+              <PlaceholderSectionPage title="Показатели с точек" />
+            </RoleGuard>
+          }
+        />
+        <Route
+          path="entry/defect"
+          element={
+            <RoleGuard allow={marketerOnly}>
+              <PlaceholderSectionPage title="Я заметил брак" />
+            </RoleGuard>
+          }
+        />
+        <Route
+          path="company/rules"
+          element={
+            <RoleGuard allow={ownerMarketer}>
+              <PlaceholderSectionPage title="Правила и философия" />
+            </RoleGuard>
+          }
+        />
+        <Route
+          path="company/documents"
+          element={
+            <RoleGuard allow={ownerMarketer}>
+              <PlaceholderSectionPage title="Документы" />
+            </RoleGuard>
+          }
+        />
+        <Route
+          path="reports"
+          element={
+            <RoleGuard allow={ownerMarketer}>
+              <ReportsListPage />
             </RoleGuard>
           }
         />

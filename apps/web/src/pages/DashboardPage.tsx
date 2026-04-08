@@ -32,6 +32,7 @@ import {
 } from "../lib/dashboardSectionHints";
 import {
   formatDashboardUpdatedAt,
+  formatRollingFourWeeksSelectLabel,
   formatRollingPeriodHumanRange,
   formatWeekRangeLabel,
   monthAnchorOptions,
@@ -214,7 +215,7 @@ export function DashboardPage() {
                 <option value="">Последняя завершённая неделя</option>
                 {weekMondays.map((w) => (
                   <option key={w} value={w}>
-                    {formatWeekRangeLabel(w)}
+                    {formatRollingFourWeeksSelectLabel(w) ?? formatWeekRangeLabel(w)}
                   </option>
                 ))}
               </select>

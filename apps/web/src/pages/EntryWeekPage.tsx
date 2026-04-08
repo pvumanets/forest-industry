@@ -182,7 +182,7 @@ export function EntryWeekPage() {
 
   return (
     <div className="pb-28 md:pb-8">
-      <h1 className="mb-2 text-2xl font-bold tracking-tight text-foreground md:text-3xl">Ввод за неделю</h1>
+      <h1 className="mb-2 text-2xl font-bold tracking-tight text-foreground md:text-3xl">Общие показатели</h1>
 
       <div className="mt-4 w-full max-w-md">
         <Label htmlFor="entry-week-select" className="mb-2">

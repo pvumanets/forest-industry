@@ -11,13 +11,10 @@ import {
 import type { SeriesRow } from "../../api/reportsTypes";
 import { chartGridProps, chartLineColors, chartLineCurveProps, chartStroke } from "../../lib/chartTheme";
 import { hasAnyPoints, mergeSeriesForChart } from "../../lib/mergeSeriesForChart";
+import { formatSeriesAxisOrTooltipValue } from "../../lib/reportSeriesMoney";
 import { Card, CardContent } from "../ui/card";
 
 const MAX_SERIES = 2;
-
-function fmtTooltip(v: number) {
-  return v.toLocaleString("ru-RU", { maximumFractionDigits: 0 });
-}
 
 export function DashboardTrendChartCard({
   title,
@@ -51,9 +48,22 @@ export function DashboardTrendChartCard({
                   interval="preserveStartEnd"
                   tickFormatter={(v) => String(v).slice(5)}
                 />
-                <YAxis width={44} tick={tickStyle} domain={[0, "auto"]} />
+                <YAxis
+                  width={56}
+                  tick={tickStyle}
+                  domain={[0, "auto"]}
+                  tickFormatter={(v) =>
+                    typeof v === "number"
+                      ? formatSeriesAxisOrTooltipValue(subset[0]?.key ?? "", v)
+                      : String(v)
+                  }
+                />
                 <Tooltip
-                  formatter={(v) => (typeof v === "number" ? fmtTooltip(v) : String(v))}
+                  formatter={(v, _n, item) =>
+                    typeof v === "number" && item?.dataKey
+                      ? formatSeriesAxisOrTooltipValue(String(item.dataKey), v)
+                      : String(v)
+                  }
                   labelFormatter={(l) => String(l)}
                   contentStyle={{
                     borderRadius: "var(--radius)",

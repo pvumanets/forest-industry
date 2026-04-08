@@ -1,10 +1,11 @@
 import type { SeriesRow } from "../../api/reportsTypes";
 import { mergeSeriesForChart } from "../../lib/mergeSeriesForChart";
+import { formatSeriesAxisOrTooltipValue } from "../../lib/reportSeriesMoney";
 
-function cellFmt(v: unknown): string {
+function cellFmt(v: unknown, columnKey: string): string {
   if (v === null || v === undefined) return "—";
   if (typeof v !== "number") return String(v);
-  return v.toLocaleString("ru-RU", { maximumFractionDigits: 2 });
+  return formatSeriesAxisOrTooltipValue(columnKey, v);
 }
 
 export function SeriesTableBlock({ series }: { series: SeriesRow[] }) {
@@ -32,7 +33,7 @@ export function SeriesTableBlock({ series }: { series: SeriesRow[] }) {
               <td className="px-3 py-2 tabular-nums text-foreground">{String(r.x)}</td>
               {series.map((s) => (
                 <td key={s.key} className="px-3 py-2 tabular-nums text-foreground">
-                  {cellFmt(r[s.key])}
+                  {cellFmt(r[s.key], s.key)}
                 </td>
               ))}
             </tr>

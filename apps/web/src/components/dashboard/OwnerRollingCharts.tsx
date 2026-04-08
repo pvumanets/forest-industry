@@ -16,8 +16,16 @@ import type { DashboardPeriod } from "../../api/dashboardTypes";
 import { getReportSeries } from "../../api/reportsApi";
 import type { SeriesRow } from "../../api/reportsTypes";
 import { dashboardAnchorToSeriesRange } from "../../lib/dashboardSeriesRange";
-import { chartGridProps, chartLineColors, chartLineCurveProps, chartStroke } from "../../lib/chartTheme";
+import {
+  chartComboBarFill,
+  chartComboLineStroke,
+  chartGridProps,
+  chartLineCurveProps,
+  chartMaxBarSize,
+  chartStroke,
+} from "../../lib/chartTheme";
 import { hasAnyPoints, mergeSeriesForChart } from "../../lib/mergeSeriesForChart";
+import { formatSeriesAxisOrTooltipValue } from "../../lib/reportSeriesMoney";
 import { useNavigateOn401 } from "../../hooks/useNavigateOn401";
 import { dashboardHintChartsRolling } from "../../lib/dashboardSectionHints";
 import { Spinner } from "../ui/spinner";
@@ -27,10 +35,6 @@ import { DashboardSectionHeading } from "./DashboardSectionHeading";
 function pickSeries(rows: SeriesRow[], keys: string[]): SeriesRow[] {
   const byKey = new Map(rows.map((r) => [r.key, r]));
   return keys.map((k) => byKey.get(k)).filter((x): x is SeriesRow => Boolean(x));
-}
-
-function fmtTooltip(v: number) {
-  return v.toLocaleString("ru-RU", { maximumFractionDigits: 0 });
 }
 
 function ComboCard({
@@ -50,8 +54,8 @@ function ComboCard({
   const dataset = mergeSeriesForChart(subset);
   const show = hasAnyPoints(subset);
   const tickStyle = { fill: chartStroke.tick, fontSize: 11 };
-  const barFill = chartLineColors[0] ?? "var(--chart-1)";
-  const lineStroke = chartLineColors[1] ?? "var(--chart-2)";
+  const barFill = chartComboBarFill;
+  const lineStroke = chartComboLineStroke;
 
   const barRow = subset.find((s) => s.key === barKey);
   const lineRow = subset.find((s) => s.key === lineKey);
@@ -75,21 +79,29 @@ function ComboCard({
                 />
                 <YAxis
                   yAxisId="left"
-                  width={48}
+                  width={58}
                   tick={tickStyle}
                   domain={[0, "auto"]}
-                  tickFormatter={(v) => (typeof v === "number" ? fmtTooltip(v) : String(v))}
+                  tickFormatter={(v) =>
+                    typeof v === "number" ? formatSeriesAxisOrTooltipValue(barKey, v) : String(v)
+                  }
                 />
                 <YAxis
                   yAxisId="right"
                   orientation="right"
-                  width={44}
+                  width={54}
                   tick={tickStyle}
                   domain={[0, "auto"]}
-                  tickFormatter={(v) => (typeof v === "number" ? fmtTooltip(v) : String(v))}
+                  tickFormatter={(v) =>
+                    typeof v === "number" ? formatSeriesAxisOrTooltipValue(lineKey, v) : String(v)
+                  }
                 />
                 <Tooltip
-                  formatter={(v) => (typeof v === "number" ? fmtTooltip(v) : String(v))}
+                  formatter={(v, _n, item) =>
+                    typeof v === "number" && item?.dataKey
+                      ? formatSeriesAxisOrTooltipValue(String(item.dataKey), v)
+                      : String(v)
+                  }
                   labelFormatter={(l) => String(l)}
                   contentStyle={{
                     borderRadius: "var(--radius)",
@@ -105,7 +117,7 @@ function ComboCard({
                     name={barRow.label}
                     fill={barFill}
                     radius={[4, 4, 0, 0]}
-                    maxBarSize={48}
+                    maxBarSize={chartMaxBarSize}
                   />
                 ) : null}
                 {lineRow ? (

@@ -1,12 +1,20 @@
 import { useMemo, useState } from "react";
 import type { DashboardOutletSlice } from "../../api/dashboardTypes";
-import { formatKpiValue } from "../../lib/formatKpiValue";
+import {
+  formatKpiValue,
+  formatKpiValueTitle,
+  getDashboardKpiMoneyDisplay,
+} from "../../lib/formatKpiValue";
+import { getKpiPolarity } from "../../lib/kpiPolarity";
 import { dashboardHintOutletCompare } from "../../lib/dashboardSectionHints";
 import { cn } from "../../lib/utils";
 import { nativeSelectClass } from "../../lib/formNativeClasses";
 import { Card, CardContent } from "../ui/card";
 import { Label } from "../ui/label";
 import { ComparisonBadge } from "./ComparisonBadge";
+import { KpiMoneyValue } from "./KpiMoneyValue";
+import { KpiValueBadgeRow } from "./KpiValueBadgeRow";
+import { KpiValueOverflow } from "./KpiValueOverflow";
 import { DashboardSectionHeading } from "./DashboardSectionHeading";
 
 const METRICS = [
@@ -67,21 +75,50 @@ export function OwnerOutletCompare({ byOutlet }: { byOutlet: DashboardOutletSlic
         </div>
       </div>
 
-      <Card>
+      <Card className="min-w-0 @container">
         <CardContent className="space-y-5 p-4 pt-5 sm:p-5">
           <div className="space-y-4">
             {rows.map(({ slice, kpi, pct }) => {
               if (!kpi) return null;
               return (
                 <div key={slice.outlet_code}>
-                  <div className="mb-1 flex flex-wrap items-center justify-between gap-2">
-                    <span className="text-sm font-medium text-foreground">{slice.display_name}</span>
-                    <span className="inline-flex items-center gap-2">
-                      <span className="text-sm font-semibold tabular-nums text-foreground">
-                        {formatKpiValue(kpi.id, kpi.current)}
-                      </span>
-                      <ComparisonBadge c={kpi.comparison} />
+                  <div className="mb-1 flex w-full min-w-0 flex-col gap-2 @min-[240px]:flex-row @min-[240px]:items-start @min-[240px]:justify-between">
+                    <span className="min-w-0 text-sm font-medium @min-[240px]:max-w-[40%] @min-[240px]:shrink-0 @min-[240px]:truncate">
+                      {slice.display_name}
                     </span>
+                    <div className="min-w-0 w-full @min-[240px]:max-w-[56%] @min-[240px]:flex-1">
+                      <KpiValueBadgeRow
+                        value={
+                          kpi.current === null ? (
+                            <KpiValueOverflow className="text-sm font-semibold">—</KpiValueOverflow>
+                          ) : (
+                            (() => {
+                              const md = getDashboardKpiMoneyDisplay(kpi.id, kpi.current);
+                              if (md) {
+                                return (
+                                  <KpiMoneyValue
+                                    display={md}
+                                    className="text-sm font-semibold"
+                                    title={formatKpiValueTitle(kpi.id, kpi.current)}
+                                  />
+                                );
+                              }
+                              return (
+                                <KpiValueOverflow
+                                  className="text-sm font-semibold"
+                                  title={formatKpiValueTitle(kpi.id, kpi.current)}
+                                >
+                                  {formatKpiValue(kpi.id, kpi.current)}
+                                </KpiValueOverflow>
+                              );
+                            })()
+                          )
+                        }
+                        badge={
+                          <ComparisonBadge c={kpi.comparison} polarity={getKpiPolarity(kpi.id)} />
+                        }
+                      />
+                    </div>
                   </div>
                   <div
                     className="h-2.5 overflow-hidden rounded-full bg-muted"
@@ -118,14 +155,24 @@ export function OwnerOutletCompare({ byOutlet }: { byOutlet: DashboardOutletSlic
                     return (
                       <tr key={slice.outlet_code} className="border-b border-border/80 last:border-0">
                         <td className="py-2 pr-3 font-medium text-foreground">{slice.display_name}</td>
-                        <td className="py-2 pr-3 tabular-nums text-foreground">
+                        <td
+                          className="max-w-[9rem] break-words py-2 pr-3 tabular-nums text-foreground"
+                          title={formatKpiValueTitle(kpi.id, kpi.current)}
+                        >
                           {formatKpiValue(kpi.id, kpi.current)}
                         </td>
-                        <td className="py-2 pr-3 tabular-nums text-muted-foreground">
+                        <td
+                          className="max-w-[9rem] break-words py-2 pr-3 tabular-nums text-muted-foreground"
+                          title={
+                            kpi.previous === null
+                              ? undefined
+                              : formatKpiValueTitle(kpi.id, kpi.previous)
+                          }
+                        >
                           {kpi.previous === null ? "—" : formatKpiValue(kpi.id, kpi.previous)}
                         </td>
                         <td className="py-2">
-                          <ComparisonBadge c={kpi.comparison} />
+                          <ComparisonBadge c={kpi.comparison} polarity={getKpiPolarity(kpi.id)} />
                         </td>
                       </tr>
                     );

@@ -53,10 +53,11 @@ services:
     build: ./apps/web
     environment:
       VITE_API_PROXY_TARGET: http://api:8000
-      # Polling по bind-mount с Windows грузит CPU и раздувает ответы Vite до 10–20+ с (см. debug-6d5457 H2).
-      # HMR по src может не сработать без polling — тогда `pnpm dev` на хосте или `docker compose restart web` после правок.
-      CHOKIDAR_USEPOLLING: "false"
-      CHOKIDAR_INTERVAL: "8000"
+      # Polling на Windows bind-mount даёт приемлемый watch, но на практике раздувает ответы Vite до минут (Docker Desktop I/O).
+      # По умолчанию false: быстрый dev; после правок в apps/web на хосте — `docker compose restart web` (или `pnpm dev` с машины на :5173).
+      # Если очень нужен watch без рестарта — в `.env`: CHOKIDAR_USEPOLLING=true и CHOKIDAR_INTERVAL=8000 (на свой риск).
+      CHOKIDAR_USEPOLLING: ${CHOKIDAR_USEPOLLING:-false}
+      CHOKIDAR_INTERVAL: ${CHOKIDAR_INTERVAL:-8000}
       HMR_CLIENT_PORT: ${WEB_HOST_PORT:-5174}
     # Без привязки только к 127.0.0.1: иначе `localhost` (часто IPv6 ::1) не попадает в порт и браузер висит до таймаута.
     ports:

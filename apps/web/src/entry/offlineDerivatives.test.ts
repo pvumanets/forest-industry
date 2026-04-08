@@ -6,6 +6,7 @@ describe("offlineAvgCheck", () => {
     const r = offlineAvgCheck("10000.50", "10");
     expect(r.isDash).toBe(false);
     expect(r.text).toMatch(/1[\s\u00a0]?000/);
+    expect(r.text).toContain("₽");
   });
 
   it("при нуле заказов — прочерк и noOrders", () => {

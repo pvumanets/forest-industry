@@ -1,3 +1,11 @@
+/** Recharts: макс. ширина столбца в px (~половина прежних 48 / 56). */
+export const chartMaxBarSize = 24;
+export const chartMaxBarSizeStacked = 28;
+
+/** Комбо «столбец + линия»: развести по яркости/оттенку, не chart-1+chart-2 подряд. */
+export const chartComboBarFill = "var(--chart-4)";
+export const chartComboLineStroke = "var(--chart-1)";
+
 /** Цвета линий графиков — синхронно с :root --chart-* в index.css */
 export const chartLineColors = [
   "var(--chart-2)",

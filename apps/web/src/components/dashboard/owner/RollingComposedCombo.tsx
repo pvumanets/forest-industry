@@ -11,18 +11,22 @@ import {
   YAxis,
 } from "recharts";
 import type { SeriesRow } from "../../../api/reportsTypes";
-import { chartGridProps, chartLineColors, chartLineCurveProps, chartStroke } from "../../../lib/chartTheme";
+import {
+  chartComboBarFill,
+  chartComboLineStroke,
+  chartGridProps,
+  chartLineCurveProps,
+  chartMaxBarSize,
+  chartStroke,
+} from "../../../lib/chartTheme";
 import { hasAnyPoints, mergeSeriesForChart } from "../../../lib/mergeSeriesForChart";
+import { formatSeriesAxisOrTooltipValue } from "../../../lib/reportSeriesMoney";
 import { Spinner } from "../../ui/spinner";
 import { Card, CardContent } from "../../ui/card";
 
 function pickSeries(rows: SeriesRow[], keys: string[]): SeriesRow[] {
   const byKey = new Map(rows.map((r) => [r.key, r]));
   return keys.map((k) => byKey.get(k)).filter((x): x is SeriesRow => Boolean(x));
-}
-
-function fmtTooltip(v: number) {
-  return v.toLocaleString("ru-RU", { maximumFractionDigits: 0 });
 }
 
 export function RollingComposedCombo({
@@ -44,8 +48,8 @@ export function RollingComposedCombo({
   const dataset = mergeSeriesForChart(subset);
   const show = hasAnyPoints(subset);
   const tickStyle = { fill: chartStroke.tick, fontSize: 11 };
-  const barFill = chartLineColors[0] ?? "var(--chart-1)";
-  const lineStroke = chartLineColors[1] ?? "var(--chart-2)";
+  const barFill = chartComboBarFill;
+  const lineStroke = chartComboLineStroke;
   const barRow = subset.find((s) => s.key === barKey);
   const lineRow = subset.find((s) => s.key === lineKey);
 
@@ -73,10 +77,12 @@ export function RollingComposedCombo({
                 />
                 <YAxis
                   yAxisId="left"
-                  width={52}
+                  width={62}
                   tick={tickStyle}
                   domain={[0, "auto"]}
-                  tickFormatter={(v) => (typeof v === "number" ? fmtTooltip(v) : String(v))}
+                  tickFormatter={(v) =>
+                    typeof v === "number" ? formatSeriesAxisOrTooltipValue(barKey, v) : String(v)
+                  }
                 />
                 <YAxis
                   yAxisId="right"
@@ -84,10 +90,16 @@ export function RollingComposedCombo({
                   width={44}
                   tick={tickStyle}
                   domain={[0, "auto"]}
-                  tickFormatter={(v) => (typeof v === "number" ? fmtTooltip(v) : String(v))}
+                  tickFormatter={(v) =>
+                    typeof v === "number" ? formatSeriesAxisOrTooltipValue(lineKey, v) : String(v)
+                  }
                 />
                 <Tooltip
-                  formatter={(v) => (typeof v === "number" ? fmtTooltip(v) : String(v))}
+                  formatter={(v, _n, item) =>
+                    typeof v === "number" && item?.dataKey
+                      ? formatSeriesAxisOrTooltipValue(String(item.dataKey), v)
+                      : String(v)
+                  }
                   labelFormatter={(l) => String(l)}
                   contentStyle={{
                     borderRadius: "var(--radius)",
@@ -103,7 +115,7 @@ export function RollingComposedCombo({
                     name={barRow.label}
                     fill={barFill}
                     radius={[4, 4, 0, 0]}
-                    maxBarSize={48}
+                    maxBarSize={chartMaxBarSize}
                   />
                 ) : null}
                 {lineRow ? (

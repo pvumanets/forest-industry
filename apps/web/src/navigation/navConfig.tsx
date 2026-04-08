@@ -1,83 +1,83 @@
 import type { LucideIcon } from "lucide-react";
-import {
-  BarChart3,
-  CalendarDays,
-  Globe,
-  LayoutDashboard,
-  Map,
-  Recycle,
-  ShoppingBag,
-  Star,
-  Store,
-} from "lucide-react";
+import { Building2, FileBarChart, LayoutDashboard, PenLine, Store } from "lucide-react";
 import type { UserRole } from "../api/types";
 
-export interface NavItem {
+export interface NavLeaf {
   to: string;
   label: string;
   end?: boolean;
   icon: LucideIcon;
 }
 
-function iconForReport(to: string): LucideIcon {
-  if (to.includes("site")) return Globe;
-  if (to.includes("outlets")) return Store;
-  if (to.includes("2gis") || to.includes("yandex")) return Map;
-  if (to.includes("ozon")) return ShoppingBag;
-  if (to.includes("returns")) return Recycle;
-  return BarChart3;
+export interface NavGroup {
+  label: string;
+  icon: LucideIcon;
+  children: { to: string; label: string }[];
 }
 
-export function navForRole(role: UserRole): { primary: NavItem[]; reports: NavItem[] } {
-  const reportDefs: { to: string; label: string }[] = [
-    { to: "/reports/site", label: "Сайт" },
-    { to: "/reports/outlets", label: "Точки" },
-    { to: "/reports/maps/2gis", label: "Карты 2ГИС" },
-    { to: "/reports/maps/yandex", label: "Карты Яндекс" },
-    { to: "/reports/ozon", label: "Ozon" },
-    { to: "/reports/returns", label: "Возвраты" },
-  ];
+export type NavEntry = NavLeaf | NavGroup;
 
-  const reports: NavItem[] = reportDefs.map((r) => ({
-    ...r,
-    icon: iconForReport(r.to),
-  }));
+export function isNavGroup(entry: NavEntry): entry is NavGroup {
+  return "children" in entry;
+}
 
+/** Ссылки на конкретные отчёты (страница «Список отчетов»). */
+export const reportDestinationLinks: { to: string; label: string }[] = [
+  { to: "/reports/site", label: "Сайт" },
+  { to: "/reports/outlets", label: "Точки" },
+  { to: "/reports/maps/2gis", label: "Карты 2ГИС" },
+  { to: "/reports/maps/yandex", label: "Карты Яндекс" },
+  { to: "/reports/ozon", label: "Ozon" },
+  { to: "/reports/returns", label: "Возвраты" },
+];
+
+export function navForRole(role: UserRole): NavEntry[] {
   if (role === "site_manager") {
-    return {
-      primary: [
-        {
-          to: "/entry/offline",
-          label: "Ввод по точке",
-          end: false,
-          icon: Store,
-        },
-      ],
-      reports: [],
-    };
+    return [
+      {
+        to: "/entry/offline",
+        label: "Ввод по точке",
+        end: false,
+        icon: Store,
+      },
+    ];
   }
 
-  const primary: NavItem[] = [
-    {
-      to: "/dashboard",
-      label: "Сводка",
-      end: true,
-      icon: LayoutDashboard,
-    },
-  ];
+  const summary: NavLeaf = {
+    to: "/dashboard",
+    label: "Сводка",
+    end: true,
+    icon: LayoutDashboard,
+  };
+
+  const reportsGroup: NavGroup = {
+    label: "Отчеты",
+    icon: FileBarChart,
+    children: [{ to: "/reports", label: "Список отчетов" }],
+  };
+
+  const companyGroup: NavGroup = {
+    label: "О компании",
+    icon: Building2,
+    children: [
+      { to: "/company/rules", label: "Правила и философия" },
+      { to: "/company/documents", label: "Документы" },
+    ],
+  };
+
   if (role === "marketer") {
-    primary.push({
-      to: "/entry/week",
-      label: "Ввод за неделю",
-      end: false,
-      icon: CalendarDays,
-    });
-    primary.push({
-      to: "/entry/reputation",
-      label: "Репутация",
-      end: false,
-      icon: Star,
-    });
+    const dataGroup: NavGroup = {
+      label: "Внести данные",
+      icon: PenLine,
+      children: [
+        { to: "/entry/week", label: "Общие показатели" },
+        { to: "/entry/point-metrics", label: "Показатели с точек" },
+        { to: "/entry/reputation", label: "Репутация" },
+        { to: "/entry/defect", label: "Я заметил брак" },
+      ],
+    };
+    return [summary, dataGroup, reportsGroup, companyGroup];
   }
-  return { primary, reports };
+
+  return [summary, reportsGroup, companyGroup];
 }

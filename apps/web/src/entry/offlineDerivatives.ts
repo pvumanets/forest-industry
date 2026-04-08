@@ -16,7 +16,7 @@ export function offlineAvgCheck(
   if (Number.isNaN(rev)) {
     return { text: "—", isDash: true, noOrders: false };
   }
-  return { text: `${formatRub(rev / ord)} ₽`, isDash: false, noOrders: false };
+  return { text: formatRub(rev / ord), isDash: false, noOrders: false };
 }
 
 export function offlineRetAvg(
@@ -31,6 +31,6 @@ export function offlineRetAvg(
   if (Number.isNaN(sum)) {
     return { text: "—", isDash: true };
   }
-  return { text: `${formatRub(sum / n)} ₽`, isDash: false };
+  return { text: formatRub(sum / n), isDash: false };
 }
 

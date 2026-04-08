@@ -13,7 +13,7 @@ import type { UseQueryResult } from "@tanstack/react-query";
 import type { DashboardBlock } from "../../../api/dashboardTypes";
 import type { ReportSeriesResponse } from "../../../api/reportsTypes";
 import { dashboardHintSectionSite } from "../../../lib/dashboardSectionHints";
-import { chartGridProps, chartLineColors, chartStroke } from "../../../lib/chartTheme";
+import { chartGridProps, chartLineColors, chartMaxBarSizeStacked, chartStroke } from "../../../lib/chartTheme";
 import { hasAnyPoints, mergeSeriesForChart } from "../../../lib/mergeSeriesForChart";
 import { Spinner } from "../../ui/spinner";
 import { Card, CardContent } from "../../ui/card";
@@ -101,7 +101,7 @@ export function OwnerSiteSection({
                       stackId="traffic"
                       fill={chartLineColors[i % chartLineColors.length] ?? "var(--chart-1)"}
                       radius={i === subset.length - 1 ? [4, 4, 0, 0] : [0, 0, 0, 0]}
-                      maxBarSize={56}
+                      maxBarSize={chartMaxBarSizeStacked}
                     />
                   ))}
                 </BarChart>

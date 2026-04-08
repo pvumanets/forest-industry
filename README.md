@@ -5,7 +5,7 @@
 ## Требования
 
 - **Docker Desktop** (или Docker Engine + Compose v2)
-- Для правок фронта/бэка на хосте (без контейнеров): **Node.js 20+**, **pnpm** (`corepack enable` или `npm i -g pnpm`), **Python 3.12+**
+- Для правок фронта/бэка на хосте (без контейнеров): **Node.js 20+**, **pnpm** (`corepack enable` или `npm i -g pnpm`), **Python 3.12+**. В **GitHub Actions** для фронта используется **Node 22** (см. `.github/workflows/ci.yml`).
 
 ## Быстро открыть UI в браузере
 
@@ -83,7 +83,7 @@ powershell -ExecutionPolicy Bypass -File scripts/start-dev-ui.ps1
 - API (из каталога `apps/api`): `python -m pip install -e ".[dev]"`, затем `python -m pytest`, `python -m ruff check src tests`. Интеграционные тесты БД нуждаются в запущенном PostgreSQL и `DATABASE_URL` с `postgresql+psycopg://` (как в `.env.example`); целевая версия Python для API — **3.12** (при нескольких установленных версиях используйте venv от 3.12).
 - Web (из `apps/web`): `pnpm install`, `pnpm build`, `pnpm test` (Vitest). Прокси dev-сервера: `/api` → `VITE_API_PROXY_TARGET` или по умолчанию `http://127.0.0.1:8000`; в Docker Compose для сервиса `web` задано `http://api:8000`. **Фаза 8:** пустой **GET** marketing/offline отдаёт `null` по полям — форма показывает пустые поля до первого **PUT** (см. `apps/api` OpenAPI).
 
-В CI: [`.github/workflows/ci.yml`](.github/workflows/ci.yml) (Python 3.12, pnpm, те же шаги).
+В CI: [`.github/workflows/ci.yml`](.github/workflows/ci.yml) (Python **3.12**, **Node 22** для `web`, pnpm, те же шаги).
 
 ## Документация
 
